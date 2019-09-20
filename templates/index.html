@@ -1,0 +1,71 @@
+{% extends "page.html" %}
+
+{% block main %}
+
+<div class="container">
+
+  {% if fixed_message %}
+  <div class="row"> 
+    <div class="col-md-offset-3 col-md-6">
+      {{ fixed_message }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if user.admin %}
+  <div class="row">
+    <form action="/services/announcement/update" method="post" class="col-md-offset-3 col-md-6">
+      <div class="form-group">
+        <label for="announcement">Announcement</label>
+        <textarea class="form-control" id="announcement" name="announcement" rows="2" placeholder="Announcement text..."></textarea>
+        <small class="form-text text-muted">
+          Submit a blank message to clear the latest announcement and make it a previous one.
+        </small>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form> 
+  </div>
+  {% endif %}
+
+  <div class="row"> 
+    <div class="col-md-offset-3 col-md-6">
+      <h2>Latest Announcement</h2>
+    </div>
+  </div>
+  {% for entry in storage | reverse %}
+  {% if loop.index == 2 %}
+    <div class="row"> 
+      <div class="col-md-offset-3 col-md-6">
+        <h2>Previous Announcements</h2>
+      </div>
+    </div>
+  {% endif %}
+  {% if entry.announcement %}
+    <div class="row"> 
+      <div class="col-md-offset-3 col-md-6">
+        <p>
+          {{ entry.announcement }}<br>
+          <small>{{ entry.timestamp.strftime("%Y-%m-%d %H:%M:%S") }} ({{ entry.user }})</small>
+        </p>
+      </div>
+    </div>
+  {% else %}
+    {% if loop.index == 1 %}
+      <div class="row"> 
+        <div class="col-md-offset-3 col-md-6">
+          <p>None.</p>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+  {% else %}
+    <div class="row"> 
+      <div class="col-md-offset-3 col-md-6">
+        <p>None.</p>
+      </div>
+    </div>
+  {% endfor %}
+
+</div>
+
+{% endblock %}
