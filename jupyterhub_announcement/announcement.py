@@ -11,7 +11,7 @@ from jupyterhub.utils import url_path_join
 from jupyterhub._data import DATA_FILES_PATH
 from tornado import escape, gen, ioloop, web
 
-from traitlets.config import Application
+from traitlets.config import Application, LoggingConfigurable
 from traitlets import Bool, Dict, Integer, List, Unicode, default
 
 
@@ -22,17 +22,92 @@ class _JSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+def _datetime_hook(json_dict):
+    for (key, value) in json_dict.items():
+        try:
+            json_dict[key] = datetime.datetime.fromisoformat(value)
+        except:
+            pass
+    return json_dict
+
+
+class AnnouncementQueue(LoggingConfigurable):
+
+    announcements = List()
+
+    persist_path = Unicode(
+            "",
+            help="""File path where announcements persist as JSON.
+
+            For a persistent announcement queue, this parameter must be set to
+            a non-empty value and correspond to a read+write-accessible path.
+            The announcement queue is stored as a list of JSON objects. If this
+            parameter is set to a non-empty value:
+
+            * The persistence file is used to initialize the announcement queue
+              at start-up. This is the only time the persistence file is read.
+            * If the persistence file does not exist at start-up, it is
+              created when an announcement is added to the queue.
+            * The persistence file is over-written with the contents of the
+              announcement queue each time a new announcement is added.
+
+            If this parameter is set to an empty value (the default) then the
+            queue is just empty at initialization and the queue is ephemeral;
+            announcements will not be persisted on updates to the queue."""
+    ).tag(config=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        if self.persist_path:
+            self.log.info(f"restoring queue from {self.persist_path}")
+            self._handle_restore()
+        else:
+            self.log.info("ephemeral queue, persist_path not set")
+        self.log.info(f"queue has {len(self.announcements)} announcements")
+
+    def _handle_restore(self):
+        try:
+            self._restore()
+        except FileNotFoundError:
+            self.log.info(f"persist_path not found ({self.persist_path})")
+        except Exception as err:
+            self.log.error(f"failed to restore queue ({err})")
+
+    def _restore(self):
+        with open(self.persist_path, "r") as stream:
+            self.announcements = json.load(stream, object_hook=_datetime_hook)
+
+    def update(self, user, announcement=""):
+        self.announcements.append(dict(user=user,
+            announcement=announcement,
+            timestamp=datetime.datetime.now()))
+        if self.persist_path:
+            self.log.info(f"persisting queue to {self.persist_path}")
+            self._handle_persist()
+
+    def _handle_persist(self):
+        try:
+            self._persist()
+        except Exception as err:
+            self.log.error(f"failed to persist queue ({err})")
+
+    def _persist(self):
+        with open(self.persist_path, "w") as stream:
+            json.dump(self.announcements, stream, cls=_JSONEncoder, indent=2)
+
+
 class AnnouncementHandler(HubAuthenticated, web.RequestHandler):
 
-    def initialize(self, storage):
-        self.storage = storage
+    def initialize(self, queue):
+        self.queue = queue
 
 
 class AnnouncementViewHandler(AnnouncementHandler):
     """View announcements page"""
 
-    def initialize(self, storage, fixed_message, loader):
-        super().initialize(storage)
+    def initialize(self, queue, fixed_message, loader):
+        super().initialize(queue)
         self.fixed_message = fixed_message
         self.loader = loader
         self.env = Environment(loader=self.loader)
@@ -45,7 +120,8 @@ class AnnouncementViewHandler(AnnouncementHandler):
         logout_url = url_path_join(prefix, "logout")
         self.write(self.template.render(user=user, 
             fixed_message=self.fixed_message,
-            storage=self.storage, static_url=self.static_url,
+            announcements=self.queue.announcements,
+            static_url=self.static_url,
             login_url=self.hub_auth.login_url, 
             logout_url=logout_url,
             base_url=prefix,
@@ -56,10 +132,9 @@ class AnnouncementLatestHandler(AnnouncementHandler):
     """Return the latest announcement as JSON"""
 
     def get(self):
-        if self.storage:
-            latest = self.storage[-1]
-        else:
-            latest = {"announcement": ""}
+        latest = {"announcement": ""}
+        if self.queue:
+            latest = self.queue.announcements[-1]
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(escape.utf8(json.dumps(latest, cls=_JSONEncoder)))
 
@@ -70,21 +145,18 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
     hub_users = []
     allow_admin = True
 
-    def push(self, user, announcement=""):
-        self.storage.append(dict(user=user,
-            announcement=announcement,
-            timestamp=datetime.datetime.now()))
-
     @web.authenticated
     def post(self):
         """Update announcement"""
         user = self.get_current_user()
         announcement = self.get_body_argument("announcement")
-        self.push(user["name"], announcement)
+        self.queue.update(user["name"], announcement)
         self.redirect(self.application.reverse_url("view"))
 
 
 class AnnouncementService(Application):
+
+    classes = [AnnouncementQueue]
 
     flags = Dict({
         'generate-config': (
@@ -148,6 +220,7 @@ class AnnouncementService(Application):
 
     def initialize(self, argv=None):
         super().initialize(argv)
+
         if self.generate_config:
             print(self.generate_config_file())
             sys.exit(0)
@@ -155,7 +228,10 @@ class AnnouncementService(Application):
         if self.config_file:
             self.load_config_file(self.config_file)
 
-        self.storage = list()
+        # Totally confused by traitlets logging
+        self.log.parent.setLevel(self.log.level)
+
+        self.init_queue()
 
         base_path = self._template_paths_default()[0]
         if base_path not in self.template_paths:
@@ -173,12 +249,15 @@ class AnnouncementService(Application):
         }
 
         self.app = web.Application([
-            (self.service_prefix, AnnouncementViewHandler, dict(storage=self.storage, fixed_message=self.fixed_message, loader=loader), "view"),
-            (self.service_prefix + r"latest", AnnouncementLatestHandler, dict(storage=self.storage)),
-            (self.service_prefix + r"update", AnnouncementUpdateHandler, dict(storage=self.storage)),
+            (self.service_prefix, AnnouncementViewHandler, dict(queue=self.queue, fixed_message=self.fixed_message, loader=loader), "view"),
+            (self.service_prefix + r"latest", AnnouncementLatestHandler, dict(queue=self.queue)),
+            (self.service_prefix + r"update", AnnouncementUpdateHandler, dict(queue=self.queue)),
             (self.service_prefix + r"static/(.*)", web.StaticFileHandler, dict(path=self.settings["static_path"])),
             (self.service_prefix + r"logo", LogoHandler, {"path": self.logo_file})
         ], **self.settings)
+
+    def init_queue(self):
+        self.queue = AnnouncementQueue(log=self.log, config=self.config)
 
     def start(self):
         self.app.listen(self.port)
