@@ -116,7 +116,7 @@ class AnnouncementService(Application):
     data_files_path = Unicode(
             DATA_FILES_PATH,
             help="Location of JupyterHub data files"
-    ).tag(config=True)
+    )
 
     template_paths = List(
             help="Search paths for jinja templates, coming before default ones"
