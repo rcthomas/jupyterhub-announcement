@@ -1,6 +1,6 @@
 # jupyterhub-announcement
 
-This is an announcement service for JupyterHub that you can manage through a JupyterHub UI.
+This is an announcement service for JupyterHub that you can manage through a JupyterHub-styled UI.
 You can use it to communicate with your hub's users about status, upcoming outages, or share news.
 It allows you to post a current announcement, and show previous announcements in reverse chronological order.
 It provides a REST API hook that you can use to post the latest announcement on JupyterHub itself (with custom templates).
@@ -63,7 +63,8 @@ Log in as an admin user, then go back to the above URL.
 You'll now see the same page as before but with a text box.
 Enter a message like 
 
-    "Apologies, JupyterHub will be down for interociter maintenance at 3:30 PM Earth time and will take 20 of your Earth minutes."
+    Apologies. JupyterHub will be down for interociter maintenance at 3:30 PM 
+    Earth time and it will take 20 of your Earth "minutes."
 
 That becomes the Latest Announcement.
 If you enter an empty message, it clears that message and demotes it to a Previous Announcement.
