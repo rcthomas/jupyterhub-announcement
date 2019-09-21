@@ -2,6 +2,7 @@
 import datetime
 import json
 import os
+import sys
 
 from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PrefixLoader
 from jupyterhub.services.auth import HubAuthenticated
@@ -11,7 +12,7 @@ from jupyterhub._data import DATA_FILES_PATH
 from tornado import escape, gen, ioloop, web
 
 from traitlets.config import Application
-from traitlets import Integer, List, Unicode, default
+from traitlets import Bool, Dict, Integer, List, Unicode, default
 
 
 class _JSONEncoder(json.JSONEncoder):
@@ -85,8 +86,20 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
 
 class AnnouncementService(Application):
 
-    config_file = Unicode("announcement_config.py", 
-            help="Load this config file"
+    flags = Dict({
+        'generate-config': (
+            {'AnnouncementService': {'generate_config': True}},
+            "Generate default config file",
+        )})
+
+    generate_config = Bool(
+            False, 
+            help="Generate default config file"
+    ).tag(config=True)
+
+    config_file = Unicode(
+            "announcement_config.py", 
+            help="Config file to load"
     ).tag(config=True)
 
     service_prefix = Unicode(
@@ -95,17 +108,18 @@ class AnnouncementService(Application):
             help="Announcement service prefix"
     ).tag(config=True)
 
-    port = Integer(8888,
-            help="Port to listen on"
+    port = Integer(
+            8888,
+            help="Port this service will listen on"
     ).tag(config=True)
 
     data_files_path = Unicode(
-        DATA_FILES_PATH,
-        help="The location of jupyterhub data files (e.g. /usr/local/share/jupyterhub)"
+            DATA_FILES_PATH,
+            help="Location of JupyterHub data files"
     ).tag(config=True)
 
     template_paths = List(
-        help="Paths to search for jinja templates, before using the default templates."
+            help="Search paths for jinja templates, coming before default ones"
     ).tag(config=True)
 
     @default('template_paths')
@@ -113,8 +127,9 @@ class AnnouncementService(Application):
         return [os.path.join(self.data_files_path, 'announcement/templates'),
                 os.path.join(self.data_files_path, 'templates')]
 
-    logo_file = Unicode("",
-        help="Specify path to a logo image to override the Jupyter logo in the banner.",
+    logo_file = Unicode(
+            "",
+            help="Logo path, can be used to override JupyterHub one",
     ).tag(config=True)
 
     @default('logo_file')
@@ -123,12 +138,19 @@ class AnnouncementService(Application):
             self.data_files_path, 'static', 'images', 'jupyterhub-80.png'
         )
 
-    fixed_message = Unicode("",
-            help="""Fixed message to show at the top of the page, 
-            like a link to a more general system status page."""
+    fixed_message = Unicode(
+            "",
+            help="""Fixed message to show at the top of the page.
+
+            A good use for this parameter would be a link to a more general
+            live system status page or MOTD."""
     ).tag(config=True)
 
-    def initialize(self):
+    def initialize(self, argv=None):
+        super().initialize(argv)
+        if self.generate_config:
+            print(self.generate_config_file())
+            sys.exit(0)
 
         if self.config_file:
             self.load_config_file(self.config_file)
