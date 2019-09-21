@@ -96,3 +96,7 @@ If your service goes down or restarts, you lose them all.
 We'll probably just persist them to a flat file.
 That couldn't possibly fail.
 We should put a cap on the size of the announcement queue, or expire them after some time period.
+
+The README could have more pictures.
+
+The README could be more serious.
