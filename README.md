@@ -55,27 +55,32 @@ If you're running this locally on port 8000 (or in a Docker container with that 
 
 If all goes well you'll see a mostly blank JupyterHub-style page with "None" for the "Latest Announcement."
 
-    PLACE FIGURE HERE
+![Unauthenticated view](docs/resources/01-unauthenticated-view.png "Unauthenticated view")
 
 Now go ahead and click the convenient login button.
 Log in as an admin user, then go back to the above URL.
 
-    PLACE FIGURE HERE
+![Admin view uninitialized](docs/resources/02-admin-view-uninitialized.png "Admin view uninitialized")
 
 You'll now see the same page as before but with a text box.
-Enter a message like 
+Enter a message.
 
-    Apologies. JupyterHub will be down for interociter maintenance at 3:30 PM 
-    Earth time and it will take 20 of your Earth "minutes."
+![Admin view filling out](docs/resources/03-admin-view-filling-out.png "Admin view filling out")
 
 That becomes the Latest Announcement.
+
+![Admin view filled out](docs/resources/04-admin-view-filled-out.png "Admin view filled out")
+
 If you enter an empty message, it clears that message and demotes it to a Previous Announcement.
+
+![Admin view cleared](docs/resources/05-admin-view-cleared.png "Admin view cleared")
+
 Go on.  Add a few more.  Then log out.
-
-    PLACE FIGURE HERE
-
-Now log in using a test user who is not an admin (you have one right?).
+Now log in using a test user who is not an admin.
 Point back at the announcement page and there you see all these wonderful communications your friendly admin sent to you.
+
+![User view](docs/resources/06-user-view.png "User view")
+
 Log out again and have a look.
 You can see them even if you're logged out.
 
