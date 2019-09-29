@@ -110,5 +110,3 @@ The persistence file is just JSON.
 ## Things That Could Use Work
 
 We should put a cap on the size of the announcement queue, or expire them after some time period.
-
-The README could have more pictures.
