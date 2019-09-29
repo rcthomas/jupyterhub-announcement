@@ -32,7 +32,7 @@
       <h2>Latest Announcement</h2>
     </div>
   </div>
-  {% for entry in storage | reverse %}
+  {% for entry in announcements | reverse %}
   {% if loop.index == 2 %}
     <div class="row"> 
       <div class="col-md-offset-3 col-md-6">

@@ -45,3 +45,26 @@
 ## Search paths for jinja templates, coming before default ones
 #c.AnnouncementService.template_paths = []
 
+#------------------------------------------------------------------------------
+# AnnouncementQueue(LoggingConfigurable) configuration
+#------------------------------------------------------------------------------
+
+## File path where announcements persist as JSON.
+#  
+#  For a persistent announcement queue, this parameter must be set to a non-empty
+#  value and correspond to a read+write-accessible path. The announcement queue
+#  is stored as a list of JSON objects. If this parameter is set to a non-empty
+#  value:
+#  
+#  * The persistence file is used to initialize the announcement queue
+#    at start-up. This is the only time the persistence file is read.
+#  * If the persistence file does not exist at start-up, it is
+#    created when an announcement is added to the queue.
+#  * The persistence file is over-written with the contents of the
+#    announcement queue each time a new announcement is added.
+#  
+#  If this parameter is set to an empty value (the default) then the queue is
+#  just empty at initialization and the queue is ephemeral; announcements will
+#  not be persisted on updates to the queue.
+#c.AnnouncementQueue.persist_path = ''
+
