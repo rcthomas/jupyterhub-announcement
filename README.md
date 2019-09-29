@@ -42,9 +42,11 @@ Here's the config if you set it up as an external service, say, in another Docke
 
 You have to specify the API token for the hub and the announcement service to share here.
 
+The service also has its own configuration file, by default `announcement_config.py` is what it is called.
+The configuration text can be generated with a `--generate-config` option.
+
 ## How to Use It
 
-Well isn't that pleasant.
 What does it actually look like when it runs?
 Start up the hub.
 If you're running this locally on port 8000 (or in a Docker container with that port exposed), go to
@@ -89,14 +91,19 @@ If the latest announcement has been cleared or there are no announcements yet, a
 There's a hook in the configuration that lets you add a custom message above all the annoucements.
 A good use for this message would be to include a link to a more general system status or message of the day (MOTD) page.
 
+## Persisted Announcements
+
+By default the service does nothing to persist announcements.
+You can change this behavior by specifying `persist_path` for the `AnnouncementQueue` object.
+If this is set, then at start up the service will read this file and try to initialize the queue with its contents.
+If it is set but the file doesn't exist, that's OK, the queue just starts off empty.
+On update, the file is over-written to reflect the current state of the queue.
+This way if the service is restarted, those old announcements aren't lost.
+The persistence file is just JSON.
+**BE CERTAIN** access to this file is protected! 
+
 ## Things That Could Use Work
 
-The announcements are just stored in memory.
-If your service goes down or restarts, you lose them all.
-We'll probably just persist them to a flat file.
-That couldn't possibly fail.
 We should put a cap on the size of the announcement queue, or expire them after some time period.
 
 The README could have more pictures.
-
-The README could be more serious.
