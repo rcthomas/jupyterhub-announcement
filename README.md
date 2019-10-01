@@ -96,6 +96,12 @@ If the latest announcement has been cleared or there are no announcements yet, a
 There's a hook in the configuration that lets you add a custom message above all the annoucements.
 A good use for this message would be to include a link to a more general system status or message of the day (MOTD) page.
 
+## Announcement Lifetime
+
+Announcements are retained in the queue for up to some configurable lifetime in days.
+After that they are purged automatically.
+By default announcements stay in the queue for a week.
+
 ## Persisted Announcements
 
 By default the service does nothing to persist announcements.
@@ -106,7 +112,3 @@ On update, the file is over-written to reflect the current state of the queue.
 This way if the service is restarted, those old announcements aren't lost.
 The persistence file is just JSON.
 **BE CERTAIN** access to this file is protected! 
-
-## Things That Could Use Work
-
-We should put a cap on the size of the announcement queue, or expire them after some time period.

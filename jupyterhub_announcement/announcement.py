@@ -12,7 +12,7 @@ from jupyterhub._data import DATA_FILES_PATH
 from tornado import escape, gen, ioloop, web
 
 from traitlets.config import Application, LoggingConfigurable
-from traitlets import Bool, Dict, Integer, List, Unicode, default
+from traitlets import Bool, Dict, Float, Integer, List, Unicode, default
 
 
 class _JSONEncoder(json.JSONEncoder):
@@ -56,6 +56,13 @@ class AnnouncementQueue(LoggingConfigurable):
             announcements will not be persisted on updates to the queue."""
     ).tag(config=True)
 
+    lifetime_days = Float(7.0,
+            help="""Number of days to retain announcements.
+
+            Announcements that have been in the queue for this many days are
+            purged from the queue."""
+    ).tag(config=True)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -95,6 +102,16 @@ class AnnouncementQueue(LoggingConfigurable):
     def _persist(self):
         with open(self.persist_path, "w") as stream:
             json.dump(self.announcements, stream, cls=_JSONEncoder, indent=2)
+
+    def purge(self):
+        max_age = datetime.timedelta(days=self.lifetime_days)
+        now = datetime.datetime.now()
+        old_count = len(self.announcements)
+        self.announcements = [a for a in self.announcements 
+                if now - a["timestamp"] < max_age]
+        if self.persist_path and len(self.announcements) < old_count:
+            self.log.info(f"persisting queue to {self.persist_path}")
+            self._handle_persist()
 
 
 class AnnouncementHandler(HubAuthenticated, web.RequestHandler):
@@ -261,6 +278,10 @@ class AnnouncementService(Application):
 
     def start(self):
         self.app.listen(self.port)
+        def purge_callback():
+            self.queue.purge()
+        c = ioloop.PeriodicCallback(purge_callback, 300000)
+        c.start()
         ioloop.IOLoop.current().start()
 
 

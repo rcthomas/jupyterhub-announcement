@@ -49,6 +49,12 @@
 # AnnouncementQueue(LoggingConfigurable) configuration
 #------------------------------------------------------------------------------
 
+## Number of days to retain announcements.
+#  
+#  Announcements that have been in the queue for this many days are purged from
+#  the queue.
+#c.AnnouncementQueue.lifetime_days = 7.0
+
 ## File path where announcements persist as JSON.
 #  
 #  For a persistent announcement queue, this parameter must be set to a non-empty
