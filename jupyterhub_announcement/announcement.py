@@ -150,7 +150,7 @@ class AnnouncementLatestHandler(AnnouncementHandler):
 
     def get(self):
         latest = {"announcement": ""}
-        if self.queue:
+        if self.queue.announcements:
             latest = self.queue.announcements[-1]
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(escape.utf8(json.dumps(latest, cls=_JSONEncoder)))
