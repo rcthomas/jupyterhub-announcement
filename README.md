@@ -91,6 +91,42 @@ You can make a call out to the service to get the announcement from the hub, if 
 Users may like that.
 If the latest announcement has been cleared or there are no announcements yet, an empty announcement will be returned.
 
+Here are more details on how you can use the REST endpoint in a custom template.
+This example extends the JupyterHub `page.html` template to make a little AJAX call to the announcement service.
+To make it work you must 
+
+1. Create a directory somewhere the hub can reach, let's use `/opt/templates` for instance.
+1. Add the template to `/opt/templates/page.html`
+1. Finally, set `c.JupyterHub.template_paths = ["/opt/templates"]` in your JupyterHub configuration file.
+
+Note the first line that says we are [extending a template.](https://jupyterhub.readthedocs.io/en/stable/reference/templates.html#extending-templates)
+
+    {% extends "templates/page.html" %}
+    {% block announcement %}
+    <div class="container announcement"></div>
+    {% endblock %}
+
+    {% block script %}
+    {{ super() }}
+    <script>
+    $.get("/services/announcement/latest", function(data) {
+      var announcement = data["announcement"];
+      if(announcement) {
+        $(".announcement").html(`<div class="panel panel-warning">
+          <div class="panel-heading">
+            <h3 class="panel-title">Announcement</h3>
+          </div>
+          <div class="panel-body text-center announcement">
+            ${announcement}
+          </div>       
+        </div>`);
+      }
+    });
+    </script>
+    {% endblock %}
+
+**BE CAREFUL** It should be pretty clear at this point that you want to ensure your admins can be trusted!
+
 ## Fixed Message
 
 There's a hook in the configuration that lets you add a custom message above all the annoucements.
