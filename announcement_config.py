@@ -74,3 +74,16 @@
 #  not be persisted on updates to the queue.
 #c.AnnouncementQueue.persist_path = ''
 
+#------------------------------------------------------------------------------
+# SSLContext(Configurable) configuration
+#------------------------------------------------------------------------------
+
+## SSL CA, use with keyfile and certfile
+#c.SSLContext.cafile = ''
+
+## SSL cert, use with keyfile
+#c.SSLContext.certfile = ''
+
+## SSL key, use with certfile
+#c.SSLContext.keyfile = ''
+

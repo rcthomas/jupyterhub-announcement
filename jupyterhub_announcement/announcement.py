@@ -11,8 +11,8 @@ from jupyterhub.utils import url_path_join, make_ssl_context
 from jupyterhub._data import DATA_FILES_PATH
 from tornado import escape, gen, ioloop, web
 
-from traitlets.config import Application, LoggingConfigurable
-from traitlets import Bool, Dict, Float, Integer, List, Unicode, default
+from traitlets.config import Application, Configurable, LoggingConfigurable
+from traitlets import Any, Bool, Dict, Float, Integer, List, Unicode, default
 
 
 class _JSONEncoder(json.JSONEncoder):
@@ -171,9 +171,34 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
         self.redirect(self.application.reverse_url("view"))
 
 
+class SSLContext(Configurable):
+    
+    keyfile = Unicode(
+            os.getenv("JUPYTERHUB_SSL_KEYFILE", ""),
+            help="SSL key, use with certfile"
+    ).tag(config=True)
+
+    certfile = Unicode(
+            os.getenv("JUPYTERHUB_SSL_CERTFILE", ""),
+            help="SSL cert, use with keyfile"
+    ).tag(config=True)
+
+    cafile = Unicode(
+            os.getenv("JUPYTERHUB_SSL_CLIENT_CA", ""),
+            help="SSL CA, use with keyfile and certfile"
+    ).tag(config=True)
+
+    def ssl_context(self):  
+        if self.keyfile and self.certfile and self.cafile:
+            return make_ssl_context(self.keyfile, self.certfile,
+                    cafile=self.cafile, check_hostname=False)
+        else:
+            return None
+
+
 class AnnouncementService(Application):
 
-    classes = [AnnouncementQueue]
+    classes = [AnnouncementQueue, SSLContext]
 
     flags = Dict({
         'generate-config': (
@@ -235,6 +260,8 @@ class AnnouncementService(Application):
             live system status page or MOTD."""
     ).tag(config=True)
 
+    ssl_context = Any()
+
     def initialize(self, argv=None):
         super().initialize(argv)
 
@@ -249,6 +276,7 @@ class AnnouncementService(Application):
         self.log.parent.setLevel(self.log.level)
 
         self.init_queue()
+        self.init_ssl_context()
 
         base_path = self._template_paths_default()[0]
         if base_path not in self.template_paths:
@@ -276,16 +304,11 @@ class AnnouncementService(Application):
     def init_queue(self):
         self.queue = AnnouncementQueue(log=self.log, config=self.config)
 
+    def init_ssl_context(self):
+        self.ssl_context = SSLContext(config=self.config).ssl_context()
+
     def start(self):
-
-        ssl_context = None
-        key = os.environ.get('JUPYTERHUB_SSL_KEYFILE', '')
-        cert = os.environ.get('JUPYTERHUB_SSL_CERTFILE', '')
-        ca = os.environ.get('JUPYTERHUB_SSL_CLIENT_CA', '')
-        if key and cert and ca:
-            ssl_context = make_ssl_context(key, cert, cafile=ca, check_hostname=False)
-
-        self.app.listen(self.port, ssl_options=ssl_context)
+        self.app.listen(self.port, ssl_options=self.ssl_context)
         def purge_callback():
             self.queue.purge()
         c = ioloop.PeriodicCallback(purge_callback, 300000)
