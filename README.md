@@ -45,6 +45,8 @@ You have to specify the API token for the hub and the announcement service to sh
 The service also has its own configuration file, by default `announcement_config.py` is what it is called.
 The configuration text can be generated with a `--generate-config` option.
 
+If you're running a hub with internal SSL turned on, you'll want to take advantage of the SSL option settings.
+
 ## How to Use It
 
 What does it actually look like when it runs?
