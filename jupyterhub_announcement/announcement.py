@@ -7,7 +7,7 @@ import sys
 from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PrefixLoader
 from jupyterhub.services.auth import HubAuthenticated
 from jupyterhub.handlers.static import LogoHandler
-from jupyterhub.utils import url_path_join
+from jupyterhub.utils import url_path_join, make_ssl_context
 from jupyterhub._data import DATA_FILES_PATH
 from tornado import escape, gen, ioloop, web
 
@@ -277,7 +277,15 @@ class AnnouncementService(Application):
         self.queue = AnnouncementQueue(log=self.log, config=self.config)
 
     def start(self):
-        self.app.listen(self.port)
+
+        ssl_context = None
+        key = os.environ.get('JUPYTERHUB_SSL_KEYFILE', '')
+        cert = os.environ.get('JUPYTERHUB_SSL_CERTFILE', '')
+        ca = os.environ.get('JUPYTERHUB_SSL_CLIENT_CA', '')
+        if key and cert and ca:
+            ssl_context = make_ssl_context(key, cert, cafile=ca, check_hostname=False)
+
+        self.app.listen(self.port, ssl_options=ssl_context)
         def purge_callback():
             self.queue.purge()
         c = ioloop.PeriodicCallback(purge_callback, 300000)
