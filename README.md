@@ -1,5 +1,7 @@
 # jupyterhub-announcement
 
+[![Release](https://img.shields.io/github/v/release/rcthomas/jupyterhub-announcement.svg)](https://github.com/rcthomas/jupyterhub-announcement/releases/latest)
+
 This is an announcement service for JupyterHub that you can manage through a JupyterHub-styled UI.
 You can use it to communicate with your hub's users about status, upcoming outages, or share news.
 It allows you to post a current announcement, and show previous announcements in reverse chronological order.
