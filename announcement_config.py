@@ -42,6 +42,9 @@
 ## Announcement service prefix
 #c.AnnouncementService.service_prefix = '/services/announcement/'
 
+## Allow access from subdomains
+#c.AnnouncementService.allow_origin = False
+
 ## Search paths for jinja templates, coming before default ones
 #c.AnnouncementService.template_paths = []
 

@@ -148,11 +148,20 @@ class AnnouncementViewHandler(AnnouncementHandler):
 class AnnouncementLatestHandler(AnnouncementHandler):
     """Return the latest announcement as JSON"""
 
+    def initialize(self, queue, allow_origin):
+        super().initialize(queue)
+        self.allow_origin = allow_origin
+
+
     def get(self):
         latest = {"announcement": ""}
         if self.queue.announcements:
             latest = self.queue.announcements[-1]
         self.set_header("Content-Type", "application/json; charset=UTF-8")
+        if self.allow_origin:
+            self.add_header("Access-Control-Allow-Headers", "Content-Type")
+            self.add_header("Access-Control-Allow-Origin", "*")
+            self.add_header("Access-Control-Allow-Methods", 'OPTIONS,GET')
         self.write(escape.utf8(json.dumps(latest, cls=_JSONEncoder)))
 
 
@@ -227,6 +236,11 @@ class AnnouncementService(Application):
             help="Port this service will listen on"
     ).tag(config=True)
 
+    allow_origin = Bool(
+        False,
+        help="Allow access from subdomains"
+    ).tag(config=True)
+
     data_files_path = Unicode(
             DATA_FILES_PATH,
             help="Location of JupyterHub data files"
@@ -295,7 +309,7 @@ class AnnouncementService(Application):
 
         self.app = web.Application([
             (self.service_prefix, AnnouncementViewHandler, dict(queue=self.queue, fixed_message=self.fixed_message, loader=loader), "view"),
-            (self.service_prefix + r"latest", AnnouncementLatestHandler, dict(queue=self.queue)),
+            (self.service_prefix + r"latest", AnnouncementLatestHandler, dict(queue=self.queue, allow_origin=self.allow_origin)),
             (self.service_prefix + r"update", AnnouncementUpdateHandler, dict(queue=self.queue)),
             (self.service_prefix + r"static/(.*)", web.StaticFileHandler, dict(path=self.settings["static_path"])),
             (self.service_prefix + r"logo", LogoHandler, {"path": self.logo_file})
