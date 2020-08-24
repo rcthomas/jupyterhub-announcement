@@ -1,1 +1,2 @@
 jupyterhub
+html-sanitizer

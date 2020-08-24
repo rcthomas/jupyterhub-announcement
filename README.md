@@ -14,6 +14,8 @@ This service re-uses JupyterHub's static assets and templates to achieve a consi
 As such, it requires that you have JupyterHub installed.
 You probably do.
 
+The [html-sanitizer](https://pypi.org/project/html-sanitizer/) Python package is also necessary.
+
 ## Installation
 
     pip install git+https://github.com/rcthomas/jupyterhub-announcement.git
