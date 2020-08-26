@@ -69,7 +69,8 @@ Log in as an admin user, then go back to the above URL.
 ![Admin view uninitialized](docs/resources/02-admin-view-uninitialized.png "Admin view uninitialized")
 
 You'll now see the same page as before but with a text box.
-Enter a message. Please note that your input will be sanitized. For security reasons, a few HTML tags such as "<iframe>" or "<script>" will be automatically removed.
+Enter a message. Please note that your input will be sanitized.
+For security reasons, a few HTML tags such as "<iframe>" or "<script>" will be automatically removed.
 
 ![Admin view filling out](docs/resources/03-admin-view-filling-out.png "Admin view filling out")
 
