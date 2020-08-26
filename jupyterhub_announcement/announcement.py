@@ -14,6 +14,7 @@ from tornado import escape, gen, ioloop, web
 from traitlets.config import Application, Configurable, LoggingConfigurable
 from traitlets import Any, Bool, Dict, Float, Integer, List, Unicode, default
 
+from html_sanitizer import Sanitizer
 
 class _JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -175,7 +176,9 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
     def post(self):
         """Update announcement"""
         user = self.get_current_user()
-        announcement = self.get_body_argument("announcement")
+        sanitizer = Sanitizer()
+        # announcement = self.get_body_argument("announcement")
+        announcement = sanitizer.sanitize(self.get_body_argument("announcement"))
         self.queue.update(user["name"], announcement)
         self.redirect(self.application.reverse_url("view"))
 
