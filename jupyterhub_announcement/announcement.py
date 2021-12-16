@@ -1,11 +1,12 @@
 
+import binascii
 import datetime
 import json
 import os
 import sys
 
 from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PrefixLoader
-from jupyterhub.services.auth import HubAuthenticated
+from jupyterhub.services.auth import HubOAuthenticated, HubOAuthCallbackHandler
 from jupyterhub.handlers.static import LogoHandler
 from jupyterhub.utils import url_path_join, make_ssl_context
 from jupyterhub._data import DATA_FILES_PATH
@@ -115,7 +116,7 @@ class AnnouncementQueue(LoggingConfigurable):
             self._handle_persist()
 
 
-class AnnouncementHandler(HubAuthenticated, web.RequestHandler):
+class AnnouncementHandler(HubOAuthenticated, web.RequestHandler):
 
     def initialize(self, queue):
         self.queue = queue
@@ -131,7 +132,7 @@ class AnnouncementViewHandler(AnnouncementHandler):
         self.env = Environment(loader=self.loader)
         self.template = self.env.get_template("index.html")
 
-
+    @web.authenticated
     def get(self):
         user = self.get_current_user()
         prefix = self.hub_auth.hub_prefix
@@ -279,6 +280,11 @@ class AnnouncementService(Application):
 
     ssl_context = Any()
 
+    cookie_secret_file = Unicode(
+        "jupyterhub-announcement-cookie-secret",
+        help="File in which to store the cookie secret."
+    ).tag(config=True)
+
     def initialize(self, argv=None):
         super().initialize(argv)
 
@@ -305,13 +311,19 @@ class AnnouncementService(Application):
             ]
         )
 
+        with open(self.cookie_secret_file) as f:
+            cookie_secret_text = f.read().strip()
+        cookie_secret = binascii.a2b_hex(cookie_secret_text)
+
         self.settings = {
+                "cookie_secret": cookie_secret,
                 "static_path": os.path.join(self.data_files_path, "static"),
                 "static_url_prefix": url_path_join(self.service_prefix, "static/")
         }
 
         self.app = web.Application([
             (self.service_prefix, AnnouncementViewHandler, dict(queue=self.queue, fixed_message=self.fixed_message, loader=loader), "view"),
+            (self.service_prefix + r"oauth_callback", HubOAuthCallbackHandler),
             (self.service_prefix + r"latest", AnnouncementLatestHandler, dict(queue=self.queue, allow_origin=self.allow_origin)),
             (self.service_prefix + r"update", AnnouncementUpdateHandler, dict(queue=self.queue)),
             (self.service_prefix + r"static/(.*)", web.StaticFileHandler, dict(path=self.settings["static_path"])),
