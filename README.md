@@ -45,6 +45,7 @@ Here's the config if you set it up as an external service, say, in another Docke
     ]
 
 You have to specify the API token for the hub and the announcement service to share here.
+Starting with JupyterHub 2.0, you will need to set user access through appropriate definition of `c.JupyterHub.load_roles`.
 
 The service also has its own configuration file, by default `announcement_config.py` is what it is called.
 The configuration text can be generated with a `--generate-config` option.
@@ -55,16 +56,11 @@ If you're running a hub with internal SSL turned on, you'll want to take advanta
 
 What does it actually look like when it runs?
 Start up the hub.
-If you're running this locally on port 8000 (or in a Docker container with that port exposed), go to
+Log in as an admin user, then go to
 
     http://localhost:8000/services/announcement/
 
-If all goes well you'll see a mostly blank JupyterHub-style page with "None" for the "Latest Announcement."
-
-![Unauthenticated view](docs/resources/01-unauthenticated-view.png "Unauthenticated view")
-
-Now go ahead and click the convenient login button.
-Log in as an admin user, then go back to the above URL.
+You should see:
 
 ![Admin view uninitialized](docs/resources/02-admin-view-uninitialized.png "Admin view uninitialized")
 

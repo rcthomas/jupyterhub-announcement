@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
         name='jupyterhub-announcement',
-        version='0.6.0',
+        version='0.7.0',
         description='JupyterHub Announcement Service',
         author='R. C. Thomas, François Tessier',
         author_email='rcthomas@lbl.gov',
