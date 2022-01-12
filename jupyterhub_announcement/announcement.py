@@ -281,7 +281,7 @@ class AnnouncementService(Application):
 
     cookie_secret_file = Unicode(
         "jupyterhub-announcement-cookie-secret",
-        help="File in which to store the cookie secret."
+        help="File in which we store the cookie secret."
     ).tag(config=True)
 
     def initialize(self, argv=None):
