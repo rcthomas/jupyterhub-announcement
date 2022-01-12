@@ -38,31 +38,31 @@ class AnnouncementQueue(LoggingConfigurable):
     announcements = List()
 
     persist_path = Unicode(
-            "",
-            help="""File path where announcements persist as JSON.
+        "",
+        help="""File path where announcements persist as JSON.
 
-            For a persistent announcement queue, this parameter must be set to
-            a non-empty value and correspond to a read+write-accessible path.
-            The announcement queue is stored as a list of JSON objects. If this
-            parameter is set to a non-empty value:
+        For a persistent announcement queue, this parameter must be set to
+        a non-empty value and correspond to a read+write-accessible path.
+        The announcement queue is stored as a list of JSON objects. If this
+        parameter is set to a non-empty value:
 
-            * The persistence file is used to initialize the announcement queue
-              at start-up. This is the only time the persistence file is read.
-            * If the persistence file does not exist at start-up, it is
-              created when an announcement is added to the queue.
-            * The persistence file is over-written with the contents of the
-              announcement queue each time a new announcement is added.
+        * The persistence file is used to initialize the announcement queue
+          at start-up. This is the only time the persistence file is read.
+        * If the persistence file does not exist at start-up, it is
+          created when an announcement is added to the queue.
+        * The persistence file is over-written with the contents of the
+          announcement queue each time a new announcement is added.
 
-            If this parameter is set to an empty value (the default) then the
-            queue is just empty at initialization and the queue is ephemeral;
-            announcements will not be persisted on updates to the queue."""
+        If this parameter is set to an empty value (the default) then the
+        queue is just empty at initialization and the queue is ephemeral;
+        announcements will not be persisted on updates to the queue."""
     ).tag(config=True)
 
     lifetime_days = Float(7.0,
-            help="""Number of days to retain announcements.
+        help="""Number of days to retain announcements.
 
-            Announcements that have been in the queue for this many days are
-            purged from the queue."""
+        Announcements that have been in the queue for this many days are
+        purged from the queue."""
     ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -109,7 +109,7 @@ class AnnouncementQueue(LoggingConfigurable):
         max_age = datetime.timedelta(days=self.lifetime_days)
         now = datetime.datetime.now()
         old_count = len(self.announcements)
-        self.announcements = [a for a in self.announcements 
+        self.announcements = [a for a in self.announcements
                 if now - a["timestamp"] < max_age]
         if self.persist_path and len(self.announcements) < old_count:
             self.log.info(f"persisting queue to {self.persist_path}")
@@ -137,11 +137,11 @@ class AnnouncementViewHandler(AnnouncementHandler):
         user = self.get_current_user()
         prefix = self.hub_auth.hub_prefix
         logout_url = url_path_join(prefix, "logout")
-        self.write(self.template.render(user=user, 
+        self.write(self.template.render(user=user,
             fixed_message=self.fixed_message,
             announcements=self.queue.announcements,
             static_url=self.static_url,
-            login_url=self.hub_auth.login_url, 
+            login_url=self.hub_auth.login_url,
             logout_url=logout_url,
             base_url=prefix,
             no_spawner_check=True))
@@ -185,7 +185,7 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
 
 
 class SSLContext(Configurable):
-    
+
     keyfile = Unicode(
             os.getenv("JUPYTERHUB_SSL_KEYFILE", ""),
             help="SSL key, use with certfile"
@@ -201,7 +201,7 @@ class SSLContext(Configurable):
             help="SSL CA, use with keyfile and certfile"
     ).tag(config=True)
 
-    def ssl_context(self):  
+    def ssl_context(self):
         if self.keyfile and self.certfile and self.cafile:
             return make_ssl_context(self.keyfile, self.certfile,
                     cafile=self.cafile, check_hostname=False)
@@ -220,24 +220,23 @@ class AnnouncementService(Application):
         )})
 
     generate_config = Bool(
-            False, 
-            help="Generate default config file"
+        False,
+        help="Generate default config file"
     ).tag(config=True)
 
     config_file = Unicode(
-            "announcement_config.py", 
-            help="Config file to load"
+        "announcement_config.py",
+        help="Config file to load"
     ).tag(config=True)
 
     service_prefix = Unicode(
-            os.environ.get("JUPYTERHUB_SERVICE_PREFIX", 
-                "/services/announcement/"),
-            help="Announcement service prefix"
+        os.environ.get("JUPYTERHUB_SERVICE_PREFIX", "/services/announcement/"),
+        help="Announcement service prefix"
     ).tag(config=True)
 
     port = Integer(
-            8888,
-            help="Port this service will listen on"
+        8888,
+        help="Port this service will listen on"
     ).tag(config=True)
 
     allow_origin = Bool(
@@ -246,12 +245,12 @@ class AnnouncementService(Application):
     ).tag(config=True)
 
     data_files_path = Unicode(
-            DATA_FILES_PATH,
-            help="Location of JupyterHub data files"
+        DATA_FILES_PATH,
+        help="Location of JupyterHub data files"
     )
 
     template_paths = List(
-            help="Search paths for jinja templates, coming before default ones"
+        help="Search paths for jinja templates, coming before default ones"
     ).tag(config=True)
 
     @default('template_paths')
@@ -260,8 +259,8 @@ class AnnouncementService(Application):
                 os.path.join(self.data_files_path, 'templates')]
 
     logo_file = Unicode(
-            "",
-            help="Logo path, can be used to override JupyterHub one",
+        "",
+        help="Logo path, can be used to override JupyterHub one",
     ).tag(config=True)
 
     @default('logo_file')
@@ -271,11 +270,11 @@ class AnnouncementService(Application):
         )
 
     fixed_message = Unicode(
-            "",
-            help="""Fixed message to show at the top of the page.
+         "",
+         help="""Fixed message to show at the top of the page.
 
-            A good use for this parameter would be a link to a more general
-            live system status page or MOTD."""
+         A good use for this parameter would be a link to a more general
+         live system status page or MOTD."""
     ).tag(config=True)
 
     ssl_context = Any()
