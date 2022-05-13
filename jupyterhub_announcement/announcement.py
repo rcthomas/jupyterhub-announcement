@@ -5,6 +5,7 @@ import json
 import os
 import sys
 
+import aiofiles
 from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PrefixLoader
 from jupyterhub.services.auth import HubOAuthenticated, HubOAuthCallbackHandler
 from jupyterhub.handlers.static import LogoHandler
@@ -87,25 +88,27 @@ class AnnouncementQueue(LoggingConfigurable):
         with open(self.persist_path, "r") as stream:
             self.announcements = json.load(stream, object_hook=_datetime_hook)
 
-    def update(self, user, announcement=""):
+    async def update(self, user, announcement=""):
         self.announcements.append(dict(user=user,
             announcement=announcement,
             timestamp=datetime.datetime.now()))
         if self.persist_path:
             self.log.info(f"persisting queue to {self.persist_path}")
-            self._handle_persist()
+            await self._handle_persist()
 
-    def _handle_persist(self):
+    async def _handle_persist(self):
         try:
-            self._persist()
+            await self._persist()
         except Exception as err:
             self.log.error(f"failed to persist queue ({err})")
 
-    def _persist(self):
-        with open(self.persist_path, "w") as stream:
-            json.dump(self.announcements, stream, cls=_JSONEncoder, indent=2)
+    async def _persist(self):
+        async with aiofiles.open(self.persist_path, "w") as stream:
+            await stream.write(
+                json.dumps(self.announcements, cls=_JSONEncoder, indent=2)
+            )
 
-    def purge(self):
+    async def purge(self):
         max_age = datetime.timedelta(days=self.lifetime_days)
         now = datetime.datetime.now()
         old_count = len(self.announcements)
@@ -113,7 +116,7 @@ class AnnouncementQueue(LoggingConfigurable):
                 if now - a["timestamp"] < max_age]
         if self.persist_path and len(self.announcements) < old_count:
             self.log.info(f"persisting queue to {self.persist_path}")
-            self._handle_persist()
+            await self._handle_persist()
 
 
 class AnnouncementHandler(HubOAuthenticated, web.RequestHandler):
@@ -154,7 +157,6 @@ class AnnouncementLatestHandler(AnnouncementHandler):
         super().initialize(queue)
         self.allow_origin = allow_origin
 
-
     def get(self):
         latest = {"announcement": ""}
         if self.queue.announcements:
@@ -174,13 +176,13 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
     allow_admin = True
 
     @web.authenticated
-    def post(self):
+    async def post(self):
         """Update announcement"""
         user = self.get_current_user()
         sanitizer = Sanitizer()
         # announcement = self.get_body_argument("announcement")
         announcement = sanitizer.sanitize(self.get_body_argument("announcement"))
-        self.queue.update(user["name"], announcement)
+        await self.queue.update(user["name"], announcement)
         self.redirect(self.application.reverse_url("view"))
 
 
@@ -337,10 +339,10 @@ class AnnouncementService(Application):
 
     def start(self):
         self.app.listen(self.port, ssl_options=self.ssl_context)
-        def purge_callback():
-            self.queue.purge()
-        c = ioloop.PeriodicCallback(purge_callback, 300000)
-        c.start()
+        async def purge_loop():
+            await self.queue.purge()
+            await gen.sleep(300)
+        ioloop.IOLoop.current().add_callback(purge_loop)
         ioloop.IOLoop.current().start()
 
 
