@@ -1,4 +1,3 @@
-
 import binascii
 import datetime
 import json
@@ -6,17 +5,16 @@ import os
 import sys
 
 import aiofiles
-from jinja2 import Environment, ChoiceLoader, FileSystemLoader, PrefixLoader
-from jupyterhub.services.auth import HubOAuthenticated, HubOAuthCallbackHandler
-from jupyterhub.handlers.static import LogoHandler
-from jupyterhub.utils import url_path_join, make_ssl_context
-from jupyterhub._data import DATA_FILES_PATH
-from tornado import escape, gen, ioloop, web
-
-from traitlets.config import Application, Configurable, LoggingConfigurable
-from traitlets import Any, Bool, Dict, Float, Integer, List, Unicode, default
-
 from html_sanitizer import Sanitizer
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader
+from jupyterhub._data import DATA_FILES_PATH
+from jupyterhub.handlers.static import LogoHandler
+from jupyterhub.services.auth import HubOAuthCallbackHandler, HubOAuthenticated
+from jupyterhub.utils import make_ssl_context, url_path_join
+from tornado import escape, gen, ioloop, web
+from traitlets import Any, Bool, Dict, Float, Integer, List, Unicode, default
+from traitlets.config import Application, Configurable, LoggingConfigurable
+
 
 class _JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -29,7 +27,7 @@ def _datetime_hook(json_dict):
     for (key, value) in json_dict.items():
         try:
             json_dict[key] = datetime.datetime.fromisoformat(value)
-        except:
+        except Exception:
             pass
     return json_dict
 
@@ -56,14 +54,15 @@ class AnnouncementQueue(LoggingConfigurable):
 
         If this parameter is set to an empty value (the default) then the
         queue is just empty at initialization and the queue is ephemeral;
-        announcements will not be persisted on updates to the queue."""
+        announcements will not be persisted on updates to the queue.""",
     ).tag(config=True)
 
-    lifetime_days = Float(7.0,
+    lifetime_days = Float(
+        7.0,
         help="""Number of days to retain announcements.
 
         Announcements that have been in the queue for this many days are
-        purged from the queue."""
+        purged from the queue.""",
     ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -85,13 +84,15 @@ class AnnouncementQueue(LoggingConfigurable):
             self.log.error(f"failed to restore queue ({err})")
 
     def _restore(self):
-        with open(self.persist_path, "r") as stream:
+        with open(self.persist_path) as stream:
             self.announcements = json.load(stream, object_hook=_datetime_hook)
 
     async def update(self, user, announcement=""):
-        self.announcements.append(dict(user=user,
-            announcement=announcement,
-            timestamp=datetime.datetime.now()))
+        self.announcements.append(
+            dict(
+                user=user, announcement=announcement, timestamp=datetime.datetime.now()
+            )
+        )
         if self.persist_path:
             self.log.info(f"persisting queue to {self.persist_path}")
             await self._handle_persist()
@@ -112,15 +113,15 @@ class AnnouncementQueue(LoggingConfigurable):
         max_age = datetime.timedelta(days=self.lifetime_days)
         now = datetime.datetime.now()
         old_count = len(self.announcements)
-        self.announcements = [a for a in self.announcements
-                if now - a["timestamp"] < max_age]
+        self.announcements = [
+            a for a in self.announcements if now - a["timestamp"] < max_age
+        ]
         if self.persist_path and len(self.announcements) < old_count:
             self.log.info(f"persisting queue to {self.persist_path}")
             await self._handle_persist()
 
 
 class AnnouncementHandler(HubOAuthenticated, web.RequestHandler):
-
     def initialize(self, queue):
         self.queue = queue
 
@@ -140,14 +141,18 @@ class AnnouncementViewHandler(AnnouncementHandler):
         user = self.get_current_user()
         prefix = self.hub_auth.hub_prefix
         logout_url = url_path_join(prefix, "logout")
-        self.write(self.template.render(user=user,
-            fixed_message=self.fixed_message,
-            announcements=self.queue.announcements,
-            static_url=self.static_url,
-            login_url=self.hub_auth.login_url,
-            logout_url=logout_url,
-            base_url=prefix,
-            no_spawner_check=True))
+        self.write(
+            self.template.render(
+                user=user,
+                fixed_message=self.fixed_message,
+                announcements=self.queue.announcements,
+                static_url=self.static_url,
+                login_url=self.hub_auth.login_url,
+                logout_url=logout_url,
+                base_url=prefix,
+                no_spawner_check=True,
+            )
+        )
 
 
 class AnnouncementLatestHandler(AnnouncementHandler):
@@ -165,7 +170,7 @@ class AnnouncementLatestHandler(AnnouncementHandler):
         if self.allow_origin:
             self.add_header("Access-Control-Allow-Headers", "Content-Type")
             self.add_header("Access-Control-Allow-Origin", "*")
-            self.add_header("Access-Control-Allow-Methods", 'OPTIONS,GET')
+            self.add_header("Access-Control-Allow-Methods", "OPTIONS,GET")
         self.write(escape.utf8(json.dumps(latest, cls=_JSONEncoder)))
 
 
@@ -189,24 +194,23 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
 class SSLContext(Configurable):
 
     keyfile = Unicode(
-            os.getenv("JUPYTERHUB_SSL_KEYFILE", ""),
-            help="SSL key, use with certfile"
+        os.getenv("JUPYTERHUB_SSL_KEYFILE", ""), help="SSL key, use with certfile"
     ).tag(config=True)
 
     certfile = Unicode(
-            os.getenv("JUPYTERHUB_SSL_CERTFILE", ""),
-            help="SSL cert, use with keyfile"
+        os.getenv("JUPYTERHUB_SSL_CERTFILE", ""), help="SSL cert, use with keyfile"
     ).tag(config=True)
 
     cafile = Unicode(
-            os.getenv("JUPYTERHUB_SSL_CLIENT_CA", ""),
-            help="SSL CA, use with keyfile and certfile"
+        os.getenv("JUPYTERHUB_SSL_CLIENT_CA", ""),
+        help="SSL CA, use with keyfile and certfile",
     ).tag(config=True)
 
     def ssl_context(self):
         if self.keyfile and self.certfile and self.cafile:
-            return make_ssl_context(self.keyfile, self.certfile,
-                    cafile=self.cafile, check_hostname=False)
+            return make_ssl_context(
+                self.keyfile, self.certfile, cafile=self.cafile, check_hostname=False
+            )
         else:
             return None
 
@@ -215,75 +219,67 @@ class AnnouncementService(Application):
 
     classes = [AnnouncementQueue, SSLContext]
 
-    flags = Dict({
-        'generate-config': (
-            {'AnnouncementService': {'generate_config': True}},
-            "Generate default config file",
-        )})
+    flags = Dict(
+        {
+            "generate-config": (
+                {"AnnouncementService": {"generate_config": True}},
+                "Generate default config file",
+            )
+        }
+    )
 
-    generate_config = Bool(
-        False,
-        help="Generate default config file"
-    ).tag(config=True)
+    generate_config = Bool(False, help="Generate default config file").tag(config=True)
 
-    config_file = Unicode(
-        "announcement_config.py",
-        help="Config file to load"
-    ).tag(config=True)
+    config_file = Unicode("announcement_config.py", help="Config file to load").tag(
+        config=True
+    )
 
     service_prefix = Unicode(
         os.environ.get("JUPYTERHUB_SERVICE_PREFIX", "/services/announcement/"),
-        help="Announcement service prefix"
+        help="Announcement service prefix",
     ).tag(config=True)
 
-    port = Integer(
-        8888,
-        help="Port this service will listen on"
-    ).tag(config=True)
+    port = Integer(8888, help="Port this service will listen on").tag(config=True)
 
-    allow_origin = Bool(
-        False,
-        help="Allow access from subdomains"
-    ).tag(config=True)
+    allow_origin = Bool(False, help="Allow access from subdomains").tag(config=True)
 
-    data_files_path = Unicode(
-        DATA_FILES_PATH,
-        help="Location of JupyterHub data files"
-    )
+    data_files_path = Unicode(DATA_FILES_PATH, help="Location of JupyterHub data files")
 
     template_paths = List(
         help="Search paths for jinja templates, coming before default ones"
     ).tag(config=True)
 
-    @default('template_paths')
+    @default("template_paths")
     def _template_paths_default(self):
-        return [os.path.join(self.data_files_path, 'announcement/templates'),
-                os.path.join(self.data_files_path, 'templates')]
+        return [
+            os.path.join(self.data_files_path, "announcement/templates"),
+            os.path.join(self.data_files_path, "templates"),
+        ]
 
     logo_file = Unicode(
         "",
         help="Logo path, can be used to override JupyterHub one",
     ).tag(config=True)
 
-    @default('logo_file')
+    @default("logo_file")
     def _logo_file_default(self):
         return os.path.join(
-            self.data_files_path, 'static', 'images', 'jupyterhub-80.png'
+            self.data_files_path, "static", "images", "jupyterhub-80.png"
         )
 
     fixed_message = Unicode(
-         "",
-         help="""Fixed message to show at the top of the page.
+        "",
+        help="""Fixed message to show at the top of the page.
 
          A good use for this parameter would be a link to a more general
-         live system status page or MOTD."""
+         live system status page or MOTD.""",
     ).tag(config=True)
 
     ssl_context = Any()
 
     cookie_secret_file = Unicode(
         "jupyterhub-announcement-cookie-secret",
-        help="File in which we store the cookie secret."
+        help="File in which we store the cookie secret.",
     ).tag(config=True)
 
     def initialize(self, argv=None):
@@ -307,7 +303,7 @@ class AnnouncementService(Application):
             self.template_paths.append(base_path)
         loader = ChoiceLoader(
             [
-                PrefixLoader({'templates': FileSystemLoader([base_path])}, '/'),
+                PrefixLoader({"templates": FileSystemLoader([base_path])}, "/"),
                 FileSystemLoader(self.template_paths),
             ]
         )
@@ -317,19 +313,43 @@ class AnnouncementService(Application):
         cookie_secret = binascii.a2b_hex(cookie_secret_text)
 
         self.settings = {
-                "cookie_secret": cookie_secret,
-                "static_path": os.path.join(self.data_files_path, "static"),
-                "static_url_prefix": url_path_join(self.service_prefix, "static/")
+            "cookie_secret": cookie_secret,
+            "static_path": os.path.join(self.data_files_path, "static"),
+            "static_url_prefix": url_path_join(self.service_prefix, "static/"),
         }
 
-        self.app = web.Application([
-            (self.service_prefix, AnnouncementViewHandler, dict(queue=self.queue, fixed_message=self.fixed_message, loader=loader), "view"),
-            (self.service_prefix + r"oauth_callback", HubOAuthCallbackHandler),
-            (self.service_prefix + r"latest", AnnouncementLatestHandler, dict(queue=self.queue, allow_origin=self.allow_origin)),
-            (self.service_prefix + r"update", AnnouncementUpdateHandler, dict(queue=self.queue)),
-            (self.service_prefix + r"static/(.*)", web.StaticFileHandler, dict(path=self.settings["static_path"])),
-            (self.service_prefix + r"logo", LogoHandler, {"path": self.logo_file})
-        ], **self.settings)
+        self.app = web.Application(
+            [
+                (
+                    self.service_prefix,
+                    AnnouncementViewHandler,
+                    dict(
+                        queue=self.queue,
+                        fixed_message=self.fixed_message,
+                        loader=loader,
+                    ),
+                    "view",
+                ),
+                (self.service_prefix + r"oauth_callback", HubOAuthCallbackHandler),
+                (
+                    self.service_prefix + r"latest",
+                    AnnouncementLatestHandler,
+                    dict(queue=self.queue, allow_origin=self.allow_origin),
+                ),
+                (
+                    self.service_prefix + r"update",
+                    AnnouncementUpdateHandler,
+                    dict(queue=self.queue),
+                ),
+                (
+                    self.service_prefix + r"static/(.*)",
+                    web.StaticFileHandler,
+                    dict(path=self.settings["static_path"]),
+                ),
+                (self.service_prefix + r"logo", LogoHandler, {"path": self.logo_file}),
+            ],
+            **self.settings,
+        )
 
     def init_queue(self):
         self.queue = AnnouncementQueue(log=self.log, config=self.config)
@@ -339,9 +359,11 @@ class AnnouncementService(Application):
 
     def start(self):
         self.app.listen(self.port, ssl_options=self.ssl_context)
+
         async def purge_loop():
             await self.queue.purge()
             await gen.sleep(300)
+
         ioloop.IOLoop.current().add_callback(purge_loop)
         ioloop.IOLoop.current().start()
 
