@@ -23,6 +23,8 @@ repos:
     rev: 5.10.1
     hooks:
       - id: isort
+        args:
+          - "--profile=black"
 
   # Autoformat: Python code
   - repo: https://github.com/psf/black
