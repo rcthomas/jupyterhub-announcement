@@ -1,91 +1,23 @@
 import binascii
-import json
 import os
 import sys
 
-from html_sanitizer import Sanitizer
-from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader
+from jinja2 import ChoiceLoader, FileSystemLoader, PrefixLoader
 from jupyterhub._data import DATA_FILES_PATH
 from jupyterhub.handlers.static import LogoHandler
-from jupyterhub.services.auth import HubOAuthCallbackHandler, HubOAuthenticated
+from jupyterhub.services.auth import HubOAuthCallbackHandler
 from jupyterhub.utils import url_path_join
-from tornado import escape, gen, ioloop, web
+from tornado import gen, ioloop, web
 from traitlets import Any, Bool, Dict, Integer, List, Unicode, default
 from traitlets.config import Application
 
-from jupyterhub_announcement.encoder import _JSONEncoder
+from jupyterhub_announcement.handlers import (
+    AnnouncementLatestHandler,
+    AnnouncementUpdateHandler,
+    AnnouncementViewHandler,
+)
 from jupyterhub_announcement.queue import AnnouncementQueue
 from jupyterhub_announcement.ssl import SSLContext
-
-
-class AnnouncementHandler(HubOAuthenticated, web.RequestHandler):
-    def initialize(self, queue):
-        self.queue = queue
-
-
-class AnnouncementViewHandler(AnnouncementHandler):
-    """View announcements page"""
-
-    def initialize(self, queue, fixed_message, loader):
-        super().initialize(queue)
-        self.fixed_message = fixed_message
-        self.loader = loader
-        self.env = Environment(loader=self.loader)
-        self.template = self.env.get_template("index.html")
-
-    @web.authenticated
-    def get(self):
-        user = self.get_current_user()
-        prefix = self.hub_auth.hub_prefix
-        logout_url = url_path_join(prefix, "logout")
-        self.write(
-            self.template.render(
-                user=user,
-                fixed_message=self.fixed_message,
-                announcements=self.queue.announcements,
-                static_url=self.static_url,
-                login_url=self.hub_auth.login_url,
-                logout_url=logout_url,
-                base_url=prefix,
-                no_spawner_check=True,
-            )
-        )
-
-
-class AnnouncementLatestHandler(AnnouncementHandler):
-    """Return the latest announcement as JSON"""
-
-    def initialize(self, queue, allow_origin):
-        super().initialize(queue)
-        self.allow_origin = allow_origin
-
-    def get(self):
-        latest = {"announcement": ""}
-        if self.queue.announcements:
-            latest = self.queue.announcements[-1]
-        self.set_header("Content-Type", "application/json; charset=UTF-8")
-        if self.allow_origin:
-            self.add_header("Access-Control-Allow-Headers", "Content-Type")
-            self.add_header("Access-Control-Allow-Origin", "*")
-            self.add_header("Access-Control-Allow-Methods", "OPTIONS,GET")
-        self.write(escape.utf8(json.dumps(latest, cls=_JSONEncoder)))
-
-
-class AnnouncementUpdateHandler(AnnouncementHandler):
-    """Update announcements page"""
-
-    hub_users = []
-    allow_admin = True
-
-    @web.authenticated
-    async def post(self):
-        """Update announcement"""
-        user = self.get_current_user()
-        sanitizer = Sanitizer()
-        # announcement = self.get_body_argument("announcement")
-        announcement = sanitizer.sanitize(self.get_body_argument("announcement"))
-        await self.queue.update(user["name"], announcement)
-        self.redirect(self.application.reverse_url("view"))
 
 
 class AnnouncementService(Application):
