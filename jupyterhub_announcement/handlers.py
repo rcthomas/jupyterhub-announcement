@@ -46,14 +46,18 @@ class AnnouncementViewHandler(AnnouncementHandler):
 class AnnouncementLatestHandler(AnnouncementHandler):
     """Return the latest announcement as JSON"""
 
-    def initialize(self, queue, allow_origin):
+    def initialize(self, queue, allow_origin, extra_info_hook):
         super().initialize(queue)
         self.allow_origin = allow_origin
+        self.extra_info_hook = extra_info_hook
 
-    def get(self):
+    async def get(self):
         latest = {"announcement": ""}
         if self.queue.announcements:
             latest = self.queue.announcements[-1]
+        query_extra_info = self.get_query_argument("extra_info", "0").lower()
+        if (query_extra_info in ["1", "true"]) and self.extra_info_hook:
+            latest["extra_info"] = await self.extra_info_hook(self)
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if self.allow_origin:
             self.add_header("Access-Control-Allow-Headers", "Content-Type")

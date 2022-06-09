@@ -8,7 +8,7 @@ from jupyterhub.handlers.static import LogoHandler
 from jupyterhub.services.auth import HubOAuthCallbackHandler
 from jupyterhub.utils import url_path_join
 from tornado import gen, ioloop, web
-from traitlets import Any, Bool, Dict, Integer, List, Unicode, default
+from traitlets import Any, Bool, Callable, Dict, Integer, List, Unicode, default
 from traitlets.config import Application
 
 from jupyterhub_announcement.handlers import (
@@ -87,6 +87,12 @@ class AnnouncementService(Application):
         help="File in which we store the cookie secret.",
     ).tag(config=True)
 
+    extra_info_hook = Callable(
+        None,
+        allow_none=True,
+        help="Async callable to add extra info to the latest announcement.",
+    ).tag(config=True)
+
     def initialize(self, argv=None):
         super().initialize(argv)
 
@@ -139,7 +145,11 @@ class AnnouncementService(Application):
                 (
                     self.service_prefix + r"latest",
                     AnnouncementLatestHandler,
-                    dict(queue=self.queue, allow_origin=self.allow_origin),
+                    dict(
+                        queue=self.queue,
+                        allow_origin=self.allow_origin,
+                        extra_info_hook=self.extra_info_hook,
+                    ),
                 ),
                 (
                     self.service_prefix + r"update",
