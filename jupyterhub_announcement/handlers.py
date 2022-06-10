@@ -60,7 +60,7 @@ class AnnouncementLatestHandler(AnnouncementHandler):
     async def get(self):
         latest = {"announcement": ""}
         if self.queue.announcements:
-            latest = self.queue.announcements[-1]
+            latest = dict(self.queue.announcements[-1])
         query_extra = self.get_query_argument("extra", "none").lower()
         if self.extra_info_hook and (query_extra in ["separate", "combined"]):
             extra_info = await self.extra_info_hook(self)
