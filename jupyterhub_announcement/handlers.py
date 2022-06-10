@@ -1,4 +1,5 @@
 import json
+import logging
 
 from html_sanitizer import Sanitizer
 from jinja2 import Environment
@@ -11,7 +12,12 @@ from jupyterhub_announcement.encoder import _JSONEncoder
 
 class AnnouncementHandler(HubOAuthenticated, web.RequestHandler):
     def initialize(self, queue):
+        super().initialize()
         self.queue = queue
+
+    @property
+    def log(self):
+        return self.settings.get("log", logging.getLogger("tornado.application"))
 
 
 class AnnouncementViewHandler(AnnouncementHandler):
@@ -46,14 +52,18 @@ class AnnouncementViewHandler(AnnouncementHandler):
 class AnnouncementLatestHandler(AnnouncementHandler):
     """Return the latest announcement as JSON"""
 
-    def initialize(self, queue, allow_origin):
+    def initialize(self, queue, allow_origin, extra_info_hook):
         super().initialize(queue)
         self.allow_origin = allow_origin
+        self.extra_info_hook = extra_info_hook
 
-    def get(self):
+    async def get(self):
         latest = {"announcement": ""}
         if self.queue.announcements:
             latest = self.queue.announcements[-1]
+        query_extra = self.get_query_argument("extra", "0").lower()
+        if (query_extra in ["1", "true"]) and self.extra_info_hook:
+            latest["extra"] = await self.extra_info_hook(self)
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if self.allow_origin:
             self.add_header("Access-Control-Allow-Headers", "Content-Type")
