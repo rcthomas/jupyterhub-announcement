@@ -1,4 +1,5 @@
 import json
+import logging
 
 from html_sanitizer import Sanitizer
 from jinja2 import Environment
@@ -11,7 +12,12 @@ from jupyterhub_announcement.encoder import _JSONEncoder
 
 class AnnouncementHandler(HubOAuthenticated, web.RequestHandler):
     def initialize(self, queue):
+        super().initialize()
         self.queue = queue
+
+    @property
+    def log(self):
+        return self.settings.get("log", logging.getLogger("tornado.application"))
 
 
 class AnnouncementViewHandler(AnnouncementHandler):

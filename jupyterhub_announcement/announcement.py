@@ -1,10 +1,12 @@
 import binascii
+import logging
 import os
 import sys
 
 from jinja2 import ChoiceLoader, FileSystemLoader, PrefixLoader
 from jupyterhub._data import DATA_FILES_PATH
 from jupyterhub.handlers.static import LogoHandler
+from jupyterhub.log import CoroutineLogFormatter
 from jupyterhub.services.auth import HubOAuthCallbackHandler
 from jupyterhub.utils import url_path_join
 from tornado import gen, ioloop, web
@@ -93,6 +95,16 @@ class AnnouncementService(Application):
         help="Async callable to add extra info to the latest announcement.",
     ).tag(config=True)
 
+    _log_formatter_cls = CoroutineLogFormatter
+
+    @default("log_datefmt")
+    def _log_datefmt(self):
+        return "%Y-%m-%d %H:%M:%S"
+
+    @default("log_format")
+    def _log_format(self):
+        return "%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d %(name)s %(module)s:%(lineno)d]%(end_color)s %(message)s"
+
     def initialize(self, argv=None):
         super().initialize(argv)
 
@@ -103,8 +115,8 @@ class AnnouncementService(Application):
         if self.config_file:
             self.load_config_file(self.config_file)
 
-        # Totally confused by traitlets logging
-        self.log.parent.setLevel(self.log.level)
+        #       # Totally confused by traitlets logging
+        #       self.log.parent.setLevel(self.log.level)
 
         self.init_queue()
         self.init_ssl_context()
@@ -127,6 +139,7 @@ class AnnouncementService(Application):
             "cookie_secret": cookie_secret,
             "static_path": os.path.join(self.data_files_path, "static"),
             "static_url_prefix": url_path_join(self.service_prefix, "static/"),
+            "log": self.log,
         }
 
         self.app = web.Application(
@@ -165,6 +178,30 @@ class AnnouncementService(Application):
             ],
             **self.settings,
         )
+
+    def init_logging(self):
+        # This prevents double log messages because tornado use a root logger
+        # that self.log is a child of. The logging module dipatches log
+        # messages to a log and all of its ancenstors until propagate is set to
+        # False.
+        self.log.propagate = False
+
+        # disable curl debug, which is TOO MUCH
+        logging.getLogger("tornado.curl_httpclient").setLevel(
+            max(self.log_level, logging.INFO)
+        )
+
+        for name in ("access", "application", "general"):
+            # ensure all log statements identify the application they come from
+            log = logging.getLogger(f"tornado.{name}")
+            log.name = self.log.name
+
+        # hook up tornado's and oauthlib's loggers to our own
+        for name in ("tornado", "oauthlib"):
+            logger = logging.getLogger(name)
+            logger.propagate = True
+            logger.parent = self.log
+            logger.setLevel(self.log.level)
 
     def init_queue(self):
         self.queue = AnnouncementQueue(log=self.log, config=self.config)
