@@ -61,9 +61,13 @@ class AnnouncementLatestHandler(AnnouncementHandler):
         latest = {"announcement": ""}
         if self.queue.announcements:
             latest = self.queue.announcements[-1]
-        query_extra = self.get_query_argument("extra", "0").lower()
-        if (query_extra in ["1", "true"]) and self.extra_info_hook:
-            latest["extra"] = await self.extra_info_hook(self)
+        if self.extra_info_hook:
+            query_extra = self.get_query_argument("extra", "separate").lower()
+            extra_info = await self.extra_info_hook(self)
+            if query_extra == "separate":
+                latest["extra"] = extra_info
+            if query_extra == "combined":
+                latest["announcement"] += "<br>" + extra_info
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if self.allow_origin:
             self.add_header("Access-Control-Allow-Headers", "Content-Type")
