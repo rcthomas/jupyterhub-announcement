@@ -214,9 +214,8 @@ class AnnouncementService(Application):
 
         async def purge_loop():
             await self.queue.purge()
-            await gen.sleep(300)
 
-        ioloop.IOLoop.current().add_callback(purge_loop)
+        ioloop.PeriodicCallback(purge_loop, 300000).start()
         ioloop.IOLoop.current().start()
 
 
