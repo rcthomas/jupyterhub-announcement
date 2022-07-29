@@ -16,6 +16,7 @@ using
 [conda-forge.](https://conda-forge.org/)
 
     $ conda create -n env jupyterhub
+    $ conda activate env
 
 This route gets you JupyterHub plus configurable-http-proxy which is also needed.
 You can use `pip` to install JupyterHub as well, you just have to also install
