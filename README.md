@@ -44,6 +44,7 @@ Here's the config if you set it up as an external service, say, in another Docke
 
 You have to specify the API token for the hub and the announcement service to share here.
 Starting with JupyterHub 2.0, you will need to set user access through appropriate definition of `c.JupyterHub.load_roles`.
+See the [hub-managed service example](examples/hub-managed/README.md) to see how.
 
 The service also has its own configuration file, by default `announcement_config.py` is what it is called.
 The configuration text can be generated with a `--generate-config` option.
