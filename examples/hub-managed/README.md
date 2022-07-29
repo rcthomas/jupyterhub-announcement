@@ -28,12 +28,11 @@ For more details, refer to
 
 You can use `pip` to do this step:
 
-    $ pip install git+https://github.com/rcthomas/jupyterhub-announcement.git
+    $ pip install jupyterhub-announcement
 
 This will also install the dependencies 
 [aiofiles](https://pypi.org/project/aiofiles/) and
 [html-sanitizer.](https://pypi.org/project/html-sanitizer/)
-We'll add details later on other options like PyPI or conda-forge.
 
 ## Generate a cookie secret
 

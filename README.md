@@ -16,7 +16,7 @@ Announcements are visible even to users who are logged out.
 
 ## Installation
 
-    pip install git+https://github.com/rcthomas/jupyterhub-announcement.git
+    pip install jupyterhub-announcement
 
 ## How to Configure It
 
@@ -61,31 +61,31 @@ Log in as an admin user, then go to
 
 You should see:
 
-![Admin view uninitialized](docs/resources/02-admin-view-uninitialized.png "Admin view uninitialized")
+![Admin view uninitialized](https://raw.githubusercontent.com/rcthomas/jupyterhub-announcement/main/docs/resources/02-admin-view-uninitialized.png "Admin view uninitialized")
 
 You'll now see the same page as before but with a text box.
 Enter a message. Please note that your input will be sanitized.
 For security reasons, a few HTML tags such as "<iframe>" or "<script>" will be automatically removed.
 
-![Admin view filling out](docs/resources/03-admin-view-filling-out.png "Admin view filling out")
+![Admin view filling out](https://raw.githubusercontent.com/rcthomas/jupyterhub-announcement/main/docs/resources/03-admin-view-filling-out.png "Admin view filling out")
 
 That becomes the Latest Announcement.
 
-![Admin view filled out](docs/resources/04-admin-view-filled-out.png "Admin view filled out")
+![Admin view filled out](https://raw.githubusercontent.com/rcthomas/jupyterhub-announcement/main/docs/resources/04-admin-view-filled-out.png "Admin view filled out")
 
 On the hub, a user will see the announcement posted.
 
-![User view from the hub](docs/resources/04-user-view-hub.png "User view from the hub")
+![User view from the hub](https://raw.githubusercontent.com/rcthomas/jupyterhub-announcement/main/docs/resources/04-user-view-hub.png "User view from the hub")
 
 If you enter an empty message, it clears that message and demotes it to a Previous Announcement.
 
-![Admin view cleared](docs/resources/05-admin-view-cleared.png "Admin view cleared")
+![Admin view cleared](https://raw.githubusercontent.com/rcthomas/jupyterhub-announcement/main/docs/resources/05-admin-view-cleared.png "Admin view cleared")
 
 Go on.  Add a few more.  Then log out.
 Now log in using a test user who is not an admin.
 Point back at the announcement page and there you see all these wonderful communications your friendly admin sent to you.
 
-![User view](docs/resources/06-user-view.png "User view")
+![User view](https://raw.githubusercontent.com/rcthomas/jupyterhub-announcement/main/docs/resources/06-user-view.png "User view")
 
 Log out again and have a look.
 You can see them even if you're logged out.
