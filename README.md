@@ -72,6 +72,10 @@ That becomes the Latest Announcement.
 
 ![Admin view filled out](docs/resources/04-admin-view-filled-out.png "Admin view filled out")
 
+On the hub, a user will see the announcement posted.
+
+![User view from the hub](docs/resources/04-user-view-hub.png "User view from the hub")
+
 If you enter an empty message, it clears that message and demotes it to a Previous Announcement.
 
 ![Admin view cleared](docs/resources/05-admin-view-cleared.png "Admin view cleared")
