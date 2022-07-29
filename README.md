@@ -10,11 +10,9 @@ Announcements are visible even to users who are logged out.
 
 ## Requirements
 
-This service re-uses JupyterHub's static assets and templates to achieve a consistent UI between the hub and the service UI.
-As such, it requires that you have JupyterHub installed.
-You probably do.
-
-The [html-sanitizer](https://pypi.org/project/html-sanitizer/) Python package is also necessary.
+* [jupyterhub](https://pypi.org/project/jupyterhub/)
+* [html-sanitizer](https://pypi.org/project/html-sanitizer/)
+* [aiofiles](https://pypi.org/project/aiofiles/)
 
 ## Installation
 
