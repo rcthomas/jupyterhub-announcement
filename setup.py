@@ -15,5 +15,5 @@ setup(
     long_description_content_type="text/markdown",
     name="jupyterhub-announcement",
     packages=["jupyterhub_announcement"],
-    version="0.8.0.dev3",
+    version="0.8.0",
 )
