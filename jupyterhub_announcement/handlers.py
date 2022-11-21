@@ -79,6 +79,26 @@ class AnnouncementLatestHandler(AnnouncementHandler):
         self.write(escape.utf8(json.dumps(latest, cls=_JSONEncoder)))
 
 
+class AnnouncementListHandler(AnnouncementHandler):
+    """Return the latest announcement as JSON"""
+
+    def initialize(self, queue, allow_origin, list_limit=5):
+        super().initialize(queue)
+        self.allow_origin = allow_origin
+        self.list_limit = list_limit
+
+    async def get(self):
+        outputs = []
+        if self.queue.announcements:
+            outputs = [dict(a) for a in self.queue.announcements[-self.list_limit:]]
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
+        if self.allow_origin:
+            self.add_header("Access-Control-Allow-Headers", "Content-Type")
+            self.add_header("Access-Control-Allow-Origin", "*")
+            self.add_header("Access-Control-Allow-Methods", "OPTIONS,GET")
+        self.write(escape.utf8(json.dumps(outputs, cls=_JSONEncoder)))
+
+
 class AnnouncementUpdateHandler(AnnouncementHandler):
     """Update announcements page"""
 
