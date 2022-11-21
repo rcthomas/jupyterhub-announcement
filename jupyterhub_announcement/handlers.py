@@ -45,6 +45,7 @@ class AnnouncementViewHandler(AnnouncementHandler):
                 logout_url=logout_url,
                 base_url=prefix,
                 no_spawner_check=True,
+                parsed_scopes=user.get("hub_scopes") or [],
             )
         )
 
