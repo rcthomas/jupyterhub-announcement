@@ -58,7 +58,7 @@ class AnnouncementLatestHandler(AnnouncementHandler):
         self.allow_origin = allow_origin
         self.extra_info_hook = extra_info_hook
 
-    async def write_output(self, output):
+    def write_output(self, output):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if self.allow_origin:
             self.add_header("Access-Control-Allow-Headers", "Content-Type")
@@ -80,7 +80,7 @@ class AnnouncementLatestHandler(AnnouncementHandler):
                     latest["announcement"] += "<br>" + extra_info
                 else:
                     latest["announcement"] = extra_info
-        await self.write_output(latest)
+        self.write_output(latest)
 
 
 class AnnouncementListHandler(AnnouncementLatestHandler):
@@ -90,7 +90,7 @@ class AnnouncementListHandler(AnnouncementLatestHandler):
         output = []
         if self.queue.announcements:
             output = [dict(a) for a in self.queue.announcements[-self.list_limit:]]
-        await self.write_output(output)
+        self.write_output(output)
 
 
 class AnnouncementUpdateHandler(AnnouncementHandler):
