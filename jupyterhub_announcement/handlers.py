@@ -86,10 +86,16 @@ class AnnouncementLatestHandler(AnnouncementHandler):
 class AnnouncementListHandler(AnnouncementLatestHandler):
     """Return the latest announcement as JSON"""
 
+    def initialize(self, queue, allow_origin, list_limit=5):
+        super().initialize(queue)
+        self.allow_origin = allow_origin
+        self.list_limit = list_limit
+
     async def get(self):
         output = []
+        limit = self.get_arguments("limit") or self.list_limit
         if self.queue.announcements:
-            output = [dict(a) for a in self.queue.announcements[-self.list_limit:]]
+            output = [dict(a) for a in self.queue.announcements[-limit:]]
         self.write_output(output)
 
 
