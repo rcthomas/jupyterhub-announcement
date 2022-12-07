@@ -15,6 +15,7 @@ from traitlets.config import Application
 
 from jupyterhub_announcement.handlers import (
     AnnouncementLatestHandler,
+    AnnouncementListHandler,
     AnnouncementUpdateHandler,
     AnnouncementViewHandler,
 )
@@ -47,6 +48,14 @@ class AnnouncementService(Application):
     ).tag(config=True)
 
     port = Integer(8888, help="Port this service will listen on").tag(config=True)
+
+    default_limit = Integer(
+        5,
+        help=(
+            "Default limit for number of announcements to return in list endpoint "
+            "if parameter is not specified"
+        )
+    ).tag(config=True)
 
     allow_origin = Bool(False, help="Allow access from subdomains").tag(config=True)
 
@@ -162,6 +171,12 @@ class AnnouncementService(Application):
                         queue=self.queue,
                         allow_origin=self.allow_origin,
                         extra_info_hook=self.extra_info_hook,
+                    ),
+                ),
+                (
+                    self.service_prefix + r"list", AnnouncementListHandler,
+                    dict(
+                        queue=self.queue, allow_origin=self.allow_origin, default_limit=self.default_limit,
                     ),
                 ),
                 (

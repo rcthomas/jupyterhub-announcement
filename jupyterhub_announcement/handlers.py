@@ -45,17 +45,30 @@ class AnnouncementViewHandler(AnnouncementHandler):
                 logout_url=logout_url,
                 base_url=prefix,
                 no_spawner_check=True,
+                parsed_scopes=user.get("hub_scopes") or [],
             )
         )
 
 
-class AnnouncementLatestHandler(AnnouncementHandler):
+class AnnouncementOutputHandler(AnnouncementHandler):
+    def write_output(self, output):
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
+        if self.allow_origin:
+            self.add_header("Access-Control-Allow-Headers", "Content-Type")
+            self.add_header("Access-Control-Allow-Origin", "*")
+            self.add_header("Access-Control-Allow-Methods", "OPTIONS,GET")
+        self.write(escape.utf8(json.dumps(output, cls=_JSONEncoder)))
+
+
+class AnnouncementLatestHandler(AnnouncementOutputHandler):
     """Return the latest announcement as JSON"""
 
     def initialize(self, queue, allow_origin, extra_info_hook):
         super().initialize(queue)
         self.allow_origin = allow_origin
         self.extra_info_hook = extra_info_hook
+
+
 
     async def get(self):
         latest = {"announcement": ""}
@@ -71,12 +84,23 @@ class AnnouncementLatestHandler(AnnouncementHandler):
                     latest["announcement"] += "<br>" + extra_info
                 else:
                     latest["announcement"] = extra_info
-        self.set_header("Content-Type", "application/json; charset=UTF-8")
-        if self.allow_origin:
-            self.add_header("Access-Control-Allow-Headers", "Content-Type")
-            self.add_header("Access-Control-Allow-Origin", "*")
-            self.add_header("Access-Control-Allow-Methods", "OPTIONS,GET")
-        self.write(escape.utf8(json.dumps(latest, cls=_JSONEncoder)))
+        self.write_output(latest)
+
+
+class AnnouncementListHandler(AnnouncementOutputHandler):
+    """Return the latest announcement as JSON"""
+
+    def initialize(self, queue, allow_origin, default_limit=5):
+        super().initialize(queue)
+        self.allow_origin = allow_origin
+        self.default_limit = default_limit
+
+    async def get(self):
+        output = []
+        limit = int(self.get_argument("limit", self.default_limit))
+        if self.queue.announcements:
+            output = [dict(a) for a in self.queue.announcements[-limit:]]
+        self.write_output(output)
 
 
 class AnnouncementUpdateHandler(AnnouncementHandler):
