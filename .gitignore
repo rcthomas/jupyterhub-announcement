@@ -110,3 +110,6 @@ dmypy.json
 # End of https://www.gitignore.io/api/python
 
 .DS_Store
+
+# IDE files
+.idea

@@ -50,14 +50,7 @@ class AnnouncementViewHandler(AnnouncementHandler):
         )
 
 
-class AnnouncementLatestHandler(AnnouncementHandler):
-    """Return the latest announcement as JSON"""
-
-    def initialize(self, queue, allow_origin, extra_info_hook):
-        super().initialize(queue)
-        self.allow_origin = allow_origin
-        self.extra_info_hook = extra_info_hook
-
+class AnnouncementOutputHandler(AnnouncementHandler):
     def write_output(self, output):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if self.allow_origin:
@@ -65,6 +58,17 @@ class AnnouncementLatestHandler(AnnouncementHandler):
             self.add_header("Access-Control-Allow-Origin", "*")
             self.add_header("Access-Control-Allow-Methods", "OPTIONS,GET")
         self.write(escape.utf8(json.dumps(output, cls=_JSONEncoder)))
+
+
+class AnnouncementLatestHandler(AnnouncementOutputHandler):
+    """Return the latest announcement as JSON"""
+
+    def initialize(self, queue, allow_origin, extra_info_hook):
+        super().initialize(queue)
+        self.allow_origin = allow_origin
+        self.extra_info_hook = extra_info_hook
+
+
 
     async def get(self):
         latest = {"announcement": ""}
@@ -83,17 +87,17 @@ class AnnouncementLatestHandler(AnnouncementHandler):
         self.write_output(latest)
 
 
-class AnnouncementListHandler(AnnouncementLatestHandler):
+class AnnouncementListHandler(AnnouncementOutputHandler):
     """Return the latest announcement as JSON"""
 
-    def initialize(self, queue, allow_origin, list_limit=5):
+    def initialize(self, queue, allow_origin, default_limit=5):
         super().initialize(queue)
         self.allow_origin = allow_origin
-        self.list_limit = list_limit
+        self.default_limit = default_limit
 
     async def get(self):
         output = []
-        limit = self.get_arguments("limit") or self.list_limit
+        limit = int(self.get_argument("limit", self.default_limit))
         if self.queue.announcements:
             output = [dict(a) for a in self.queue.announcements[-limit:]]
         self.write_output(output)
