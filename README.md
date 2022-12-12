@@ -90,9 +90,12 @@ Point back at the announcement page and there you see all these wonderful commun
 Log out again and have a look.
 You can see them even if you're logged out.
 
-## REST Endpoint
-
-Use the `/services/announcement/latest` endpoint to get the latest announcement in JSON form.
+## REST Endpoints
+- `/services/announcement/latest` - gets the latest announcement as JSON object.
+- `/services/announcement/list` - gets the latest N announcement as JSON list of objects.
+    - To set N, you set `default_limit` in config
+    - To override the defult_limit use the following URL parameter `/services/announcement/list?limit=2`
+    
 You can make a call out to the service to get the announcement from the hub, if you customize the page template.
 Users may like that.
 If the latest announcement has been cleared or there are no announcements yet, an empty announcement will be returned.
@@ -133,6 +136,12 @@ Note the first line that says we are [extending a template.](https://jupyterhub.
 
 **BE CAREFUL** It should be pretty clear at this point that you want to ensure your admins can be trusted!
 
+## Using React
+    
+The [following example](https://github.com/rcthomas/jupyterhub-announcement/tree/main/examples/react-component) uses a react component to display the last N announcements as bootstrap toast (See image below).
+
+![](examples/react-component/announcements.png)
+    
 ## Fixed Message
 
 There's a hook in the configuration that lets you add a custom message above all the annoucements.
