@@ -46,6 +46,7 @@ class AnnouncementViewHandler(AnnouncementHandler):
                 base_url=prefix,
                 no_spawner_check=True,
                 parsed_scopes=user.get("hub_scopes") or [],
+                xsrf_form_html=self.xsrf_form_html,
             )
         )
 

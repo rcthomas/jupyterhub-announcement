@@ -149,6 +149,7 @@ class AnnouncementService(Application):
             "static_path": os.path.join(self.data_files_path, "static"),
             "static_url_prefix": url_path_join(self.service_prefix, "static/"),
             "log": self.log,
+            "xsrf_cookies": True,
         }
 
         self.app = web.Application(
