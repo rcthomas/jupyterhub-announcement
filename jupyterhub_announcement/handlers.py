@@ -23,18 +23,20 @@ class AnnouncementHandler(HubOAuthenticated, web.RequestHandler):
 class AnnouncementViewHandler(AnnouncementHandler):
     """View announcements page"""
 
-    def initialize(self, queue, fixed_message, loader):
+    def initialize(self, queue, fixed_message, loader, service_prefix):
         super().initialize(queue)
         self.fixed_message = fixed_message
         self.loader = loader
         self.env = Environment(loader=self.loader)
         self.template = self.env.get_template("index.html")
+        self.service_prefix = service_prefix
 
     @web.authenticated
     def get(self):
         user = self.get_current_user()
         prefix = self.hub_auth.hub_prefix
         logout_url = url_path_join(prefix, "logout")
+        update_url = url_path_join(self.service_prefix, "update")
         self.write(
             self.template.render(
                 user=user,
@@ -47,6 +49,7 @@ class AnnouncementViewHandler(AnnouncementHandler):
                 no_spawner_check=True,
                 parsed_scopes=user.get("hub_scopes") or [],
                 xsrf_form_html=self.xsrf_form_html,
+                update_url=update_url,
             )
         )
 
