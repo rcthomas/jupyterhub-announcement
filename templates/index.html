@@ -15,6 +15,7 @@
   {% if user.admin %}
   <div class="row">
     <form action="/services/announcement/update" method="post" class="col-md-offset-3 col-md-6">
+      {{ xsrf_form_html() | safe }}
       <div class="form-group">
         <label for="announcement">Announcement</label>
         <textarea class="form-control" id="announcement" name="announcement" rows="2" placeholder="Announcement text..."></textarea>
