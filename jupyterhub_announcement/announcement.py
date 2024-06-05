@@ -161,6 +161,7 @@ class AnnouncementService(Application):
                         queue=self.queue,
                         fixed_message=self.fixed_message,
                         loader=loader,
+                        service_prefix=self.service_prefix,
                     ),
                     "view",
                 ),
