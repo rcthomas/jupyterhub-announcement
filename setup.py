@@ -16,5 +16,5 @@ setup(
     name="jupyterhub-announcement",
     packages=["jupyterhub_announcement"],
     url="https://github.com/rcthomas/jupyterhub-announcement",
-    version="0.9.2.dev",
+    version="0.9.2",
 )
