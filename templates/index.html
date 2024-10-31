@@ -4,8 +4,11 @@
 
 <div class="container">
 
+  <div id="preview" style="display: none;" class="container text-center announcement alert alert-warning">
+  </div>
+
   {% if fixed_message %}
-  <div class="row"> 
+  <div class="row">
     <div class="col-md-offset-3 col-md-6">
       {{ fixed_message }}
     </div>
@@ -21,29 +24,29 @@
         <textarea class="form-control" id="announcement" name="announcement" rows="2" placeholder="Announcement text..."></textarea>
         <small class="form-text text-muted">
           Submit a blank message to clear the latest announcement and make it a previous one.<br/>
-	  HTML tags allowed: a, h1, h2, h3, strong, em, p, ul, ol, li, br, sub, sup, hr
+          HTML tags allowed: a, h1, h2, h3, strong, em, p, ul, ol, li, br, sub, sup, hr
         </small>
       </div>
       <button type="submit" class="btn btn-primary">Submit</button>
-    </form> 
+    </form>
   </div>
   {% endif %}
 
-  <div class="row"> 
+  <div class="row">
     <div class="col-md-offset-3 col-md-6">
       <h2>Latest Announcement</h2>
     </div>
   </div>
   {% for entry in announcements | reverse %}
   {% if loop.index == 2 %}
-    <div class="row"> 
+    <div class="row">
       <div class="col-md-offset-3 col-md-6">
         <h2>Previous Announcements</h2>
       </div>
     </div>
   {% endif %}
   {% if entry.announcement %}
-    <div class="row"> 
+    <div class="row">
       <div class="col-md-offset-3 col-md-6">
         <p>
           {{ entry.announcement }}<br>
@@ -53,7 +56,7 @@
     </div>
   {% else %}
     {% if loop.index == 1 %}
-      <div class="row"> 
+      <div class="row">
         <div class="col-md-offset-3 col-md-6">
           <p>None.</p>
         </div>
@@ -61,7 +64,7 @@
     {% endif %}
   {% endif %}
   {% else %}
-    <div class="row"> 
+    <div class="row">
       <div class="col-md-offset-3 col-md-6">
         <p>None.</p>
       </div>
@@ -69,5 +72,31 @@
   {% endfor %}
 
 </div>
+
+<script>
+
+var area = document.getElementById("announcement");
+if (area.addEventListener) {
+  area.addEventListener('input', function() {
+    myTextAreaChanged();
+  }, false);
+} else if (area.attachEvent) {
+  area.attachEvent('onpropertychange', function() {
+    myTextAreaChanged();
+  });
+}
+
+function myTextAreaChanged() {
+  var x = document.getElementById("announcement").value;
+  const prev = document.getElementById("preview");
+  if (x) {
+    prev.style.display = 'block';
+  } else {
+    prev.style.display = 'none';
+
+  }
+  prev.innerHTML = x;
+}
+</script>
 
 {% endblock %}

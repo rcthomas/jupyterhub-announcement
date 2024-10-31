@@ -54,7 +54,7 @@ class AnnouncementService(Application):
         help=(
             "Default limit for number of announcements to return in list endpoint "
             "if parameter is not specified"
-        )
+        ),
     ).tag(config=True)
 
     allow_origin = Bool(False, help="Allow access from subdomains").tag(config=True)
@@ -176,9 +176,12 @@ class AnnouncementService(Application):
                     ),
                 ),
                 (
-                    self.service_prefix + r"list", AnnouncementListHandler,
+                    self.service_prefix + r"list",
+                    AnnouncementListHandler,
                     dict(
-                        queue=self.queue, allow_origin=self.allow_origin, default_limit=self.default_limit,
+                        queue=self.queue,
+                        allow_origin=self.allow_origin,
+                        default_limit=self.default_limit,
                     ),
                 ),
                 (

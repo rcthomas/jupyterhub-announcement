@@ -72,8 +72,6 @@ class AnnouncementLatestHandler(AnnouncementOutputHandler):
         self.allow_origin = allow_origin
         self.extra_info_hook = extra_info_hook
 
-
-
     async def get(self):
         latest = {"announcement": ""}
         if self.queue.announcements:
