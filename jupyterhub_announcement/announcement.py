@@ -1,8 +1,11 @@
 import binascii
 import logging
 import os
+import re
 import sys
+import secrets
 
+from textwrap import dedent
 from jinja2 import ChoiceLoader, FileSystemLoader, PrefixLoader
 from jupyterhub._data import DATA_FILES_PATH
 from jupyterhub.handlers.static import LogoHandler
@@ -21,6 +24,13 @@ from jupyterhub_announcement.handlers import (
 )
 from jupyterhub_announcement.queue import AnnouncementQueue
 from jupyterhub_announcement.ssl import SSLContext
+
+
+COOKIE_SECRET_BYTES = (
+    32  # the number of bytes to use when generating new cookie secrets
+)
+
+HEX_RE = re.compile('^([a-f0-9]{2})+$', re.IGNORECASE)
 
 
 class AnnouncementService(Application):
@@ -127,8 +137,10 @@ class AnnouncementService(Application):
         #       # Totally confused by traitlets logging
         #       self.log.parent.setLevel(self.log.level)
 
+        self.init_logging()
         self.init_queue()
         self.init_ssl_context()
+        self.init_secrets()
 
         base_path = self._template_paths_default()[0]
         if base_path not in self.template_paths:
@@ -140,12 +152,8 @@ class AnnouncementService(Application):
             ]
         )
 
-        with open(self.cookie_secret_file) as f:
-            cookie_secret_text = f.read().strip()
-        cookie_secret = binascii.a2b_hex(cookie_secret_text)
-
         self.settings = {
-            "cookie_secret": cookie_secret,
+            "cookie_secret": self.cookie_secret,
             "static_path": os.path.join(self.data_files_path, "static"),
             "static_url_prefix": url_path_join(self.service_prefix, "static/"),
             "log": self.log,
@@ -219,6 +227,41 @@ class AnnouncementService(Application):
             logger.propagate = True
             logger.parent = self.log
             logger.setLevel(self.log.level)
+
+    def init_secrets(self):
+        secret_file = os.path.abspath(os.path.expanduser(self.cookie_secret_file))
+        try:
+            with open(secret_file) as f:
+                text_secret = f.read().strip()
+            if HEX_RE.match(text_secret):
+                # >= 0.8, use 32B hex
+                secret = binascii.a2b_hex(text_secret)
+            else:
+                # old b64 secret with a bunch of ignored bytes
+                secret = binascii.a2b_base64(text_secret)
+                self.log.warning(
+                    dedent(
+                        """
+                Old base64 cookie-secret detected in {0}.
+                JupyterHub Announcement expects 32B hex-encoded cookie secret
+                for tornado's sha256 cookie signing.
+                To generate a new secret:
+                    openssl rand -hex 32 > "{0}"
+                """
+                    ).format(secret_file)
+                )
+        except Exception as e:
+            self.log.debug("Generating new cookie secret")
+            secret = secrets.token_bytes(COOKIE_SECRET_BYTES)
+            # if we generated a new secret, store it in the secret_file
+            self.log.info("Writing cookie_secret to %s", secret_file)
+            text_secret = binascii.b2a_hex(secret).decode('ascii')
+            with open(secret_file, 'w') as f:
+                f.write(text_secret)
+                f.write('\n')
+        
+        # store the loaded trait value
+        self.cookie_secret = secret
 
     def init_queue(self):
         self.queue = AnnouncementQueue(log=self.log, config=self.config)
