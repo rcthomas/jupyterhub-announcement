@@ -1,5 +1,3 @@
-import os
-import subprocess
 import requests
 import pytest
 
@@ -35,13 +33,13 @@ def test_api_resources(jupyterhub_server, user):
 
         # Goto announcements page
         announcement = session.get(
-            f"http://localhost:8000/services/announcement/"
+            "http://localhost:8000/services/announcement/"
         )
         assert announcement.status_code == 200
 
         # Get latest announcement
         latest = session.get(
-            f"http://localhost:8000/services/announcement/latest"
+            "http://localhost:8000/services/announcement/latest"
         )
         assert latest.status_code == 200
 

@@ -12,7 +12,7 @@ from jupyterhub.handlers.static import LogoHandler
 from jupyterhub.log import CoroutineLogFormatter
 from jupyterhub.services.auth import HubOAuthCallbackHandler
 from jupyterhub.utils import url_path_join
-from tornado import gen, ioloop, web
+from tornado import ioloop, web
 from traitlets import Any, Bool, Callable, Dict, Integer, List, Unicode, default
 from traitlets.config import Application
 
@@ -142,9 +142,9 @@ class AnnouncementService(Application):
         self.init_ssl_context()
         self.init_secrets()
 
-        base_path = self._template_paths_default()[0]
-        if base_path not in self.template_paths:
-            self.template_paths.append(base_path)
+        for base_path in self._template_paths_default():
+            if base_path not in self.template_paths:
+                self.template_paths.append(base_path)
         loader = ChoiceLoader(
             [
                 PrefixLoader({"templates": FileSystemLoader([base_path])}, "/"),
@@ -250,7 +250,7 @@ class AnnouncementService(Application):
                 """
                     ).format(secret_file)
                 )
-        except Exception as e:
+        except Exception:
             self.log.debug("Generating new cookie secret")
             secret = secrets.token_bytes(COOKIE_SECRET_BYTES)
             # if we generated a new secret, store it in the secret_file
@@ -259,7 +259,7 @@ class AnnouncementService(Application):
             with open(secret_file, 'w') as f:
                 f.write(text_secret)
                 f.write('\n')
-        
+
         # store the loaded trait value
         self.cookie_secret = secret
 
