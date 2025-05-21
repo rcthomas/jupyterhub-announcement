@@ -118,7 +118,7 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
         # Check if user is admin. If not raise a 403
         if not user["admin"]:
             raise web.HTTPError(
-                403, f"{user['admin']} is not authorized to update announcement"
+                403, f"{user['name']} is not authorized to update announcement"
             )
         sanitizer = Sanitizer()
         announcement = sanitizer.sanitize(self.get_body_argument("announcement"))
