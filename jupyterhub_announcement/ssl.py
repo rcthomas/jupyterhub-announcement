@@ -1,4 +1,5 @@
 import os
+import ssl
 
 from jupyterhub.utils import make_ssl_context
 from traitlets import Unicode
@@ -23,7 +24,7 @@ class SSLContext(Configurable):
     def ssl_context(self):
         if self.keyfile and self.certfile and self.cafile:
             return make_ssl_context(
-                self.keyfile, self.certfile, cafile=self.cafile, check_hostname=False
+                self.keyfile, self.certfile, cafile=self.cafile, purpose=ssl.Purpose.CLIENT_AUTH,
             )
         else:
             return None

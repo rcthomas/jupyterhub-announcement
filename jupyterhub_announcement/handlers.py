@@ -47,7 +47,7 @@ class AnnouncementViewHandler(AnnouncementHandler):
                 logout_url=logout_url,
                 base_url=prefix,
                 no_spawner_check=True,
-                parsed_scopes=user.get("hub_scopes") or [],
+                parsed_scopes=user.get("scopes") or [],
                 xsrf_form_html=self.xsrf_form_html,
                 update_url=update_url,
             )
@@ -71,8 +71,6 @@ class AnnouncementLatestHandler(AnnouncementOutputHandler):
         super().initialize(queue)
         self.allow_origin = allow_origin
         self.extra_info_hook = extra_info_hook
-
-
 
     async def get(self):
         latest = {"announcement": ""}
@@ -117,6 +115,11 @@ class AnnouncementUpdateHandler(AnnouncementHandler):
     async def post(self):
         """Update announcement"""
         user = self.get_current_user()
+        # Check if user is admin. If not raise a 403
+        if not user["admin"]:
+            raise web.HTTPError(
+                403, f"{user['name']} is not authorized to update announcement"
+            )
         sanitizer = Sanitizer()
         announcement = sanitizer.sanitize(self.get_body_argument("announcement"))
         await self.queue.update(user["name"], announcement)
