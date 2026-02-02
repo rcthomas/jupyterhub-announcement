@@ -20,7 +20,7 @@ repos:
 
   # Autoformat: Python code
   - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
+    rev: 5.13.2
     hooks:
       - id: isort
         args:
@@ -42,7 +42,7 @@ repos:
 
   # Linting: Python code (see the file .flake8)
   - repo: https://github.com/PyCQA/flake8
-    rev: "4.0.1"
+    rev: "7.1.1"
     hooks:
       - id: flake8
         args:
